@@ -58,7 +58,7 @@ else(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(FreeGlutLibDir ${FreeGlutDir}/lib)
 endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
-include_directories($ENV{MESHLIB_ANDROID})
+include_directories($ENV{MESHFRAME_DIRECTORY})
 link_directories(${FreeGlutLibDir})
 
 file(GLOB SRC
