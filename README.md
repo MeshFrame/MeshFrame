@@ -1,5 +1,4 @@
-# Mesh
-Frame
+# MeshFrame
 
 ![CGAL](Docs/MeshFrame.png)
 
@@ -72,3 +71,25 @@ file(GLOB SRC
 )
 add_executable(MeshViewer ${SRC})
 ```
+
+## Dependencies
+MeshFrame requires no necessary dependencies, and it can work just fine alone. 
+However, some of the modules requires optional dependences like [Eigen](http://eigen.tuxfamily.org) for 
+some computational algorithms, and [FreeGult](http://http://freeglut.sourceforge.net) for visualization.
+The FreeGult is provided with MeshFrame in "MeshFrame/3rdParty/".
+
+## Contact
+
+MeshFrame is a group endeavor developed by [He Chen](http://ankachan.github.io/), [Haoyu Chen](https://github.com/IronHaoyu), Yiming Zhu, [sskqgfnnh](https://github.com/sskqgfnnh).
+
+Please contact us if you have questions or comments. For troubleshooting, please post an issue on github.
+
+This is MeshFrame official mailbox:
+
+**MeshFrame@hotmail.com**
+
+Or you can contact He Chen at:
+
+**ankachan@126.com** 
+
+
