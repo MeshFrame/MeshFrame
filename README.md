@@ -29,9 +29,13 @@ endif()
 project(Demo)
 include_directories($ENV{MESHFRAME_DIRECTORY})
 
-#Add your source files here
+file(GLOB SRC
+    #Add your source files here
+	"$ENV{MESHFRAME_DIRECTORY}/MeshLib/core/viewer/MeshViewer.cpp"
+	"$ENV{MESHFRAME_DIRECTORY}/MeshLib/core/bmp/RgbImage.cpp"
+)
 
-add_executable(MeshViewer ${Demo})
+add_executable(Demo ${SRC})
 ```
 
 If you want to use the viewer moudule, you should link your project to freeglut 
@@ -62,7 +66,7 @@ include_directories($ENV{MESHFRAME_DIRECTORY})
 link_directories(${FreeGlutLibDir})
 
 file(GLOB SRC
-    # your code here
+    #Add your source files here
 	"$ENV{MESHFRAME_DIRECTORY}/MeshLib/core/viewer/MeshViewer.cpp"
 	"$ENV{MESHFRAME_DIRECTORY}/MeshLib/core/bmp/RgbImage.cpp"
 )
