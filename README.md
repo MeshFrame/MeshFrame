@@ -16,7 +16,7 @@ put MeshFrame in include directory. We sugguest that user set MeshFrame director
 as a environment viariable **"MESHFRAME_DIRECTORY"**, and use a CMakeLists.txt like this:
 
 ```
-make_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8)
 
 if(NOT DEFINED ENV{MESHFRAME_DIRECTORY})
     message(FATAL_ERROR "not defined environment variable:MESHFRAME_DIRECTORY")  

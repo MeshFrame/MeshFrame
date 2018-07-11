@@ -1747,7 +1747,7 @@ namespace MeshLib {
 		}
 		int vId = 0;
 		/*Reset all vertexs' id*/
-		for (int i = 0; i < mVContainer.size(); i++)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); i++)
 		{
 			VertexType* currentVertex = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentVertex->index()) == false)
@@ -1777,7 +1777,7 @@ namespace MeshLib {
 		plyFileReader.ply_header_complete(plyFile);
 		/*Write vertexs' info*/
 		plyFileReader.ply_put_element_setup(plyFile, "vertex");
-		for (int i = 0; i < mVContainer.size(); i++)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); i++)
 		{
 			VertexType* currentVertex = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentVertex->index()) == false)
@@ -1787,7 +1787,7 @@ namespace MeshLib {
 		}
 		/*Write faces' info*/
 		plyFileReader.ply_put_element_setup(plyFile, "face");
-		for (int i = 0; i < mFContainer.size(); i++)
+		for (int i = 0; i < mFContainer.getCurrentIndex(); i++)
 		{
 			FaceType* currentFace = mFContainer.getPointer(i);
 			if (mFContainer.hasBeenDeleted(currentFace->index()) == false)
@@ -2075,7 +2075,7 @@ namespace MeshLib {
 		plyFileReader.free_ply_memory(plyFile, false);
 		/*Label boundary edges*/
 #pragma omp parallel
-		for (int i = 0; i < mEContainer.size(); ++i)
+		for (int i = 0; i < mEContainer.getCurrentIndex(); ++i)
 		{
 			EdgeType* currentE = mEContainer.getPointer(i);
 			HalfEdgeType* currentHE0 = edgeHalfedge(currentE, 0);
@@ -2088,7 +2088,7 @@ namespace MeshLib {
 		}
 		/*Remove isolated vertex*/
 		std::vector<VertexType*> isolatedVertexs;
-		for (int i = 0; i < mVContainer.size(); i++)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); i++)
 		{
 			VertexType* currentVertex = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentVertex->index()) == false)
@@ -2106,7 +2106,7 @@ namespace MeshLib {
 		*	Arrange the boundary half_edge of boundary vertices, to make its halfedge
 		*	to be the most ccw in half_edge
 		*/
-		for (int i = 0; i < mVContainer.size(); i++)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); i++)
 		{
 			VertexType* currentVertex = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentVertex->index()) == false)
@@ -2227,7 +2227,7 @@ namespace MeshLib {
 		}
 		fclose(pFile);
 		/*Label boundary edges*/
-		for (int i = 0; i < mEContainer.size(); ++i)
+		for (int i = 0; i < mEContainer.getCurrentIndex(); ++i)
 		{
 			EdgeType* currentE = mEContainer.getPointer(i);
 			HalfEdgeType* currentHE0 = edgeHalfedge(currentE, 0);
@@ -2241,7 +2241,7 @@ namespace MeshLib {
 		/*Remove isolated vertex*/
 		std::vector<VertexType*> isolatedVertexs;
 		//#pragma omp parallel for
-		for (int i = 0; i < mVContainer.size(); ++i)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 		{
 			VertexType* currentV = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
@@ -2259,7 +2259,7 @@ namespace MeshLib {
 		*	Arrange the boundary half_edge of boundary vertices, to make its halfedge
 		*	to be the most ccw in half_edge
 		*/
-		for (int i = 0; i < mVContainer.size(); ++i)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 		{
 			VertexType* currentV = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
@@ -2274,6 +2274,60 @@ namespace MeshLib {
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
 	inline void MeshLib::CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::write_obj(const char * output)
 	{
+		VPropHandle<int> vObjIdHdl;
+		addVProp(vObjIdHdl);
+
+		FILE *fp = fopen(output, "wb");
+		if (!fp) {
+			std::cout << "Fail to open output file: " << output << std::endl;
+			return;
+		}
+
+		int objId = 1;
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
+		{
+			
+			if (mVContainer.hasBeenDeleted(i)) {
+				continue;
+			}
+			VertexType * pV = mVContainer.getPointer(i);
+			gVP(vObjIdHdl, pV) = objId;
+			++objId;
+		}
+
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
+		{
+			if (mVContainer.hasBeenDeleted(i)) {
+				continue;
+			}
+			VertexType * pV = mVContainer.getPointer(i);
+			fprintf(fp, "v %f %f %f\n", pV->point()[0], pV->point()[1], pV->point()[2]);
+		}
+
+		for (int i = 0; i < mFContainer.getCurrentIndex(); ++i)
+		{
+			if (mFContainer.hasBeenDeleted(i)) {
+				continue;
+			}
+
+			FaceType * pF = mFContainer.getPointer(i);
+
+			HalfEdgeType * pHBegin = faceHalfedge(pF);
+			HalfEdgeType * pH = pHBegin;
+			fprintf(fp, "f");
+
+			do {
+				int i = gVP(vObjIdHdl, halfedgeTarget(pH));
+				
+				fprintf(fp, " %d", gVP(vObjIdHdl, halfedgeTarget(pH)));
+				pH = faceNextCcwHalfEdge(pH);
+			} while (pH != pHBegin);
+
+			fprintf(fp, "\n");
+		}
+
+		removeVProp(vObjIdHdl);
+		fclose(fp);
 	}
 
 //template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
@@ -2374,7 +2428,7 @@ namespace MeshLib {
 //	}
 //	fclose(pFile);
 //	/*Label boundary edges*/
-//	for (int i = 0; i < mEContainer.size(); ++i)
+//	for (int i = 0; i < mEContainer.getCurrentIndex(); ++i)
 //	{
 //		EdgeType* currentE = mEContainer.getPointer(i);
 //		HalfEdgeType* currentHE0 = edgeHalfedge(currentE, 0);
@@ -2388,7 +2442,7 @@ namespace MeshLib {
 //	/*Remove isolated vertex*/
 //	std::vector<VertexType*> isolatedVertexs;
 //	//#pragma omp parallel for
-//	for (int i = 0; i < mVContainer.size(); ++i)
+//	for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 //	{
 //		VertexType* currentV = mVContainer.getPointer(i);
 //		if (mVContainer.hasBeenDeleted(currentV->index()) == false)
@@ -2406,7 +2460,7 @@ namespace MeshLib {
 //	*	Arrange the boundary half_edge of boundary vertices, to make its halfedge
 //	*	to be the most ccw in half_edge
 //	*/
-//	for (int i = 0; i < mVContainer.size(); ++i)
+//	for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 //	{
 //		VertexType* currentV = mVContainer.getPointer(i);
 //		if (mVContainer.hasBeenDeleted(currentV->index()) == false)
@@ -2577,7 +2631,7 @@ namespace MeshLib {
 		}
 		fclose(pFile);
 		/*Label boundary edges*/
-		for (int i = 0; i < mEContainer.size(); ++i)
+		for (int i = 0; i < mEContainer.getCurrentIndex(); ++i)
 		{
 			EdgeType* currentE = mEContainer.getPointer(i);
 			HalfEdgeType* currentHE0 = edgeHalfedge(currentE, 0);
@@ -2591,7 +2645,7 @@ namespace MeshLib {
 		/*Remove isolated vertex*/
 		std::vector<VertexType*> isolatedVertexs;
 		//#pragma omp parallel for
-		for (int i = 0; i < mVContainer.size(); ++i)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 		{
 			VertexType* currentV = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
@@ -2609,7 +2663,7 @@ namespace MeshLib {
 		*	Arrange the boundary half_edge of boundary vertices, to make its halfedge
 		*	to be the most ccw in half_edge
 		*/
-		for (int i = 0; i < mVContainer.size(); ++i)
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 		{
 			VertexType* currentV = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
@@ -2630,9 +2684,10 @@ namespace MeshLib {
 		char traitBuffer[MAX_TRAIT_STRING_SIZE];
 
 		FILE *fp = fopen(output, "wb");
-		if (!fp)
+		if (!fp) {
 			std::cout << "Fail to open output file: " << output << endl;
-
+			return;
+		}
 		for (VertexType *pV : mVContainer) {
 			if (highPrecisionFloats) {
 				SAFE_SPRINT(lineBuf, MAX_LINE_SIZE, "Vertex %d %.16lf %.16lf %.16lf", pV->index() + 1, pV->point()[0], pV->point()[1], pV->point()[2]);

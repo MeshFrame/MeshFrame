@@ -64,13 +64,13 @@ void add##TARGET##Prop(TARGET##PropHandle<T> & prop, const T & initialVal){ \
 	m##TARGET##Props.push_back(&prop);\
 };\
 template<typename T> \
-T& get##TARGET##Prop(const TARGET##PropHandle<T> & prop, TARGET##Ptr & ptr){\
+T& get##TARGET##Prop(const TARGET##PropHandle<T> & prop, TARGET##Ptr  ptr){\
 	assert(prop.pPropPool != NULL);\
 	PropPool<T> * pPropPool = (PropPool<T>*)prop.pPropPool; \
 	return (*pPropPool)[ptr->index()];\
 };\
 template<typename T> \
-T& g##TARGET##P(const TARGET##PropHandle<T> & prop, TARGET##Ptr & ptr){\
+T& g##TARGET##P(const TARGET##PropHandle<T> & prop, TARGET##Ptr  ptr){\
 	assert(prop.pPropPool != NULL);\
 	PropPool<T> * pPropPool = (PropPool<T>*)prop.pPropPool; \
 	return (*pPropPool)[ptr->index()];\
