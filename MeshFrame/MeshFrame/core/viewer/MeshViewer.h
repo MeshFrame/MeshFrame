@@ -1,8 +1,8 @@
 #ifndef _MESHVIEWER_H_
 #define _MESHBIEWER_H_
 
-#include <MeshLib\core\Mesh\Vertex.h>
-#include <MeshLib\core\Geometry\PointF.h>
+#include <MeshFrame\core\Mesh\Vertex.h>
+#include <MeshFrame\core\Geometry\PointF.h>
 #include <vector>
 #include <array>
 

@@ -3,10 +3,10 @@
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
 
-#include <MeshLib\core\bmp\RgbImage.h>
-#include <MeshLib\core\Mesh\MeshCoreHeaders.h>
+#include <MeshFrame\core\bmp\RgbImage.h>
+#include <MeshFrame\core\Mesh\MeshCoreHeaders.h>
 
-#include <MeshLib\core\viewer\Arcball.h>
+#include <MeshFrame\core\viewer\Arcball.h>
 
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
