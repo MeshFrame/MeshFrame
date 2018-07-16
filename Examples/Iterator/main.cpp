@@ -1,12 +1,12 @@
 #include <algorithm>
 #include <iostream>
-#include <MeshLib2/core/Mesh/BaseMesh.h>
-#include <MeshLib2/core/Mesh/Vertex.h>
-#include <MeshLib2/core/Mesh/HalfEdge.h>
-#include <MeshLib2/core/Mesh/Edge.h>
-#include <MeshLib2/core/Mesh/Face.h>
-#include <MeshLib2/core/Mesh/Types.h>
-#include <MeshLib2/core/Mesh/Iterators.h>
+#include <MeshFrame/core/Mesh/BaseMesh.h>
+#include <MeshFrame/core/Mesh/Vertex.h>
+#include <MeshFrame/core/Mesh/HalfEdge.h>
+#include <MeshFrame/core/Mesh/Edge.h>
+#include <MeshFrame/core/Mesh/Face.h>
+#include <MeshFrame/core/Mesh/Types.h>
+#include <MeshFrame/core/Mesh/Iterators.h>
 #include <ctime>
 #include <stdio.h>
 #define _CRTDBG_MAP_ALLOC   //并非绝对需要该语句，但如果有该语句，打印出来的是文件名和行数等更加直观的信息

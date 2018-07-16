@@ -13,8 +13,8 @@
 #include <queue>
 #include <stdio.h>
 
-#include <Dense>
-#include <LU>
+#include <Eigen/Dense>
+#include <Eigen/LU>
 using Eigen::Matrix3d;
 using Eigen::Vector3d;
 
