@@ -4,7 +4,9 @@ typedef MeshLib::CBaseMesh<MeshLib::CVertex, MeshLib::CEdge, MeshLib::CFace, Mes
 
 int main() {
 	CMesh mesh;
-	mesh.read_obj("face.obj");
+	mesh.read_obj("The_Doryphoros_SMK_KAS11.obj");
 
-	mesh.write_obj("face1.obj");
+	getchar();
+
+	
 }
