@@ -250,7 +250,6 @@ inline bool MemoryPool<T>::deleteMember(size_t index)
 	else {
 		deleteMask[index] = true;
 		deletedMembersList.push_back(index);
-		//pMemberToDelete->~T();
 		return true;
 	}
 }

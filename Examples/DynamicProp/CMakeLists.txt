@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(TestDynamicProp)
 
-include_directories($ENV{MESHLIB_ANDROID})
+include_directories($ENV{MESHFRAME_DIRECTORY})
 
 file(GLOB SRC
     "*.h"

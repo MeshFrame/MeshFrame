@@ -75,8 +75,8 @@ add_executable(MeshViewer ${SRC})
 ## Dependencies
 MeshFrame requires no necessary dependencies, and it can work just fine alone. 
 However, some of the modules requires optional dependences like [Eigen](http://eigen.tuxfamily.org) for 
-some computational algorithms, and [FreeGult](http://http://freeglut.sourceforge.net) for visualization.
-The FreeGult is provided with MeshFrame in "MeshFrame/3rdParty/".
+some computational algorithms, and [FreeGlut](http://http://freeglut.sourceforge.net) for visualization.
+The FreeGlut is provided with MeshFrame in "MeshFrame/3rdParty/".
 
 ## Contact
 
