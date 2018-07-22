@@ -105,24 +105,27 @@ namespace MeshLib{
 
 	virtual bool hasUV() { return false; };
 	virtual CPoint2 & uv() {
+		static CPoint2 _uv;
 		printf("Vertex does not have uv!\n");
 		assert(false);
 		system("pause");
-		return CPoint2();
+		return _uv;
 	};
 	virtual bool hasNormal() { return false; };
 	virtual CPoint & normal() {
+		static CPoint _normal;
 		printf("Vertex does not have normal!\n");
 		assert(false);
 		system("pause");
-		return CPoint();
+		return _normal;
 	};
 	virtual bool hasColor() { return false; };
 	virtual ColorUnion & color() {
+		static ColorUnion _color;
 		printf("Vertex does not have color!\n");
 		assert(false);
 		system("pause");
-		return ColorUnion();
+		return _color;
 	};
 	
   protected:

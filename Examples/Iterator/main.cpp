@@ -1,18 +1,15 @@
-#include <algorithm>
-#include <iostream>
+
+
 #include <MeshFrame/core/Mesh/BaseMesh.h>
 #include <MeshFrame/core/Mesh/Vertex.h>
 #include <MeshFrame/core/Mesh/HalfEdge.h>
 #include <MeshFrame/core/Mesh/Edge.h>
 #include <MeshFrame/core/Mesh/Face.h>
 #include <MeshFrame/core/Mesh/Types.h>
-#include <MeshFrame/core/Mesh/Iterators.h>
+#include <MeshFrame/core/Mesh/Iterators2.h>
+
 #include <ctime>
 #include <stdio.h>
-#define _CRTDBG_MAP_ALLOC   //并非绝对需要该语句，但如果有该语句，打印出来的是文件名和行数等更加直观的信息
-#define _CRTDBG_MAP_ALLOC_NEW
-#include <stdlib.h>
-#include <crtdbg.h>
 
 using namespace MeshLib;
 
@@ -28,34 +25,26 @@ typedef CIterators<M> It;
 
 int main(int argc, char ** argv) {
 
-	
-	for (size_t i = 1; i < 5; i++)
+	M mesh;
+	//A sample from MeshLab
+	mesh.read_ply("Laurana50k.ply");
+
+	//Usage of MVIterator, to iterate all vertices in mesh
+	for (M::VPtr pV : It::MVIterator(&mesh))
 	{
-		printf("Load: %s\n", argv[i]);
-		M m;
-		CPoint p;
-		m.read_obj(argv[i]);
-		clock_t time1 = clock();
-		for (size_t n = 0; n < REPEAT_TIMES; n++)
+		printf("pV->id(): %d, pV->point(): %f %f %f\n", pV->id(), pV->point()[0], pV->point()[1], pV->point()[2]);
+
+		//Usage of VFIterator, to iterate all faces around vertex
+		for (M::FPtr pF : It::VFIterator(pV))
 		{
-#pragma omp parallel for num_threads(4)
-			for (int i = 0; i < m.vertices().size(); ++i)
+			printf("\tpF->id: %d : ", pF->id());
+			//Usage of FVIterator, to iterate all vertex around face
+			for (M::VPtr pVF : It::FVIterator(pF))
 			{
-				M::VPtr pV = m.vertices().getPointer(i);
-
-				pV->point() += CPoint(0.00001, 0.00001, 0.00001);
-				//for (M::FPtr pE : It::VFIterator(pV))
-				//{
-				//	pV->point() += CPoint(0.00001, 0.00001, 0.00001);
-				//}
-				p += pV->point();
+				printf("%d, ", pVF->id());
 			}
+			printf("\n");
 		}
-		
-		time1 = clock() - time1;
-
-		printf("%f %f %f\n", p[0],p[1], p[2]);
-		printf("Time consumption: \n%d\n", time1);
 	}
 
 	getchar();

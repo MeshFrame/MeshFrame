@@ -11,6 +11,10 @@
 #ifndef _MESHLIB_BASE_MESH_H_
 #define _MESHLIB_BASE_MESH_H_
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 #include <math.h>
 #include <assert.h>
 #include <list>
@@ -1401,7 +1405,7 @@ namespace MeshLib {
 	{
 		VertexType * pV;
 		pV = newVertex();
-		pV->id() = pV->index();
+		pV->id() = (int)pV->index();
 		mVMap.insert(VMapPair(pV->id(), pV));
 		return pV;
 	}
@@ -1515,7 +1519,7 @@ namespace MeshLib {
 		FaceType * pF;
 		pF = newFace();
 		//mFIdMap.insert(FIdMapPair(id, pF));
-		pF->id() = pF->index();
+		pF->id() = (int)pF->index();
 		//create halfedges
 		HalfEdgeType * pHEs[3];
 		for (int i = 0; i < 3; i++)
@@ -1882,11 +1886,11 @@ namespace MeshLib {
 					else if (nameMark == PLY_NAME_MARK::PLY_Z)
 						VTypePtr->point()[2] = doubleValue;
 					else if (nameMark == PLY_NAME_MARK::PLY_RED)
-						VTypePtr->color().r = doubleValue;
+						VTypePtr->color().r = (float)doubleValue;
 					else if (nameMark == PLY_NAME_MARK::PLY_GREEN)
-						VTypePtr->color().g = doubleValue;
+						VTypePtr->color().g = (float)doubleValue;
 					else if (nameMark == PLY_NAME_MARK::PLY_BLUE)
-						VTypePtr->color().b = doubleValue;
+						VTypePtr->color().b = (float)doubleValue;
 					else if (nameMark == PLY_NAME_MARK::PLY_NX)
 						VTypePtr->normal()[0] = doubleValue;
 					else if (nameMark == PLY_NAME_MARK::PLY_NY)

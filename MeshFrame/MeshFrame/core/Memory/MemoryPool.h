@@ -11,7 +11,6 @@
 #include <list>
 #include <assert.h>
 #include "./MPIterator.h"
-#include <mutex>
 
 #define DEFAULT_BLOCK_SIZE 2048
 
@@ -104,7 +103,7 @@ inline MemoryPool<T>::~MemoryPool()
 }
 
 template<typename T>
-inline MemoryPool<T>::MemoryPool(size_t preAllocate, rsize_t newBlockSize = DEFAULT_BLOCK_SIZE)
+inline MemoryPool<T>::MemoryPool(size_t preAllocate, rsize_t newBlockSize)
 	: memberTSize(sizeof(T)),
 	blockSize(newBlockSize)
 {
@@ -219,8 +218,8 @@ template<typename T>
 inline void * MemoryPool<T>::getMemberPointer(size_t index)
 {
 	//assert(index < capacity());
-	int blockIndex = index / blockSize;
-	int offSet = index % blockSize;
+	size_t blockIndex = index / blockSize;
+	size_t offSet = index % blockSize;
 	char * pStartMember = memoryBlockPtrVec[blockIndex];
 	return (pStartMember + offSet * memberTSize);
 }

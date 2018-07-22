@@ -7,7 +7,6 @@
 #ifndef _MESHLIB_PARSER_H_
 #define _MESHLIB_PARSER_H_
 
-#include <iostream>
 #include "IOFuncDef.h"
 
 namespace Parser {
@@ -40,7 +39,7 @@ namespace Parser {
 		 */
 		CParser(const char * str)
 		{
-			unsigned int len = strlen(str);
+			size_t len = strlen(str);
 			if (len >= MAX_LINE_SIZE) {
 				printf("Error: Current string's length is over MAX LINE SIZE!\n");
 				return;
@@ -105,7 +104,7 @@ namespace Parser {
 			}
 			if (currentChar != '=')
 			{
-				int keySize = strlen(mKey);
+				size_t keySize = strlen(mKey);
 				if (keySize >= MAX_TOKEN_STRING_SIZE) {
 					return TokenOut;
 				}
@@ -130,14 +129,14 @@ namespace Parser {
 			*pvalue++ = currentChar;
 			*pvalue = 0;
 
-			int keySize = strlen(mKey);
+			size_t keySize = strlen(mKey);
 			if (keySize >= MAX_TOKEN_STRING_SIZE) {
 				return TokenOut;
 			}
 			SAFE_STRCPY(mToken.mKey, mKey);
 			mToken.mKey[keySize] = '\0';
 
-			int valueSize = strlen(mValue);
+			size_t valueSize = strlen(mValue);
 			if (valueSize >= MAX_TOKEN_STRING_SIZE) {
 				return TokenOut;
 			}

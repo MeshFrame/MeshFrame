@@ -69,10 +69,11 @@ public:
 		return false;
 	}
 	virtual CPoint & normal() {
+		static CPoint _normal;
 		printf("Face does not have normal!\n");
 		assert(false);
 		system("pause");
-		return CPoint();
+		return _normal;
 	}
 
 	virtual bool hasColor() {
@@ -80,9 +81,10 @@ public:
 	}
 	virtual ColorUnion & color() {
 		printf("Face does not have normal!\n");
+		static ColorUnion _color;
 		assert(false);
 		system("pause");
-		return ColorUnion();
+		return _color;
 	}
 protected:
 	/*!

@@ -198,7 +198,7 @@ struct strutil {
 		inline bool ifIsDelimiter(const char & c)
 		{
 			const char * currentD = mDelimiters.mDelimiter;
-			int size = mDelimiters.mSize;
+			size_t size = mDelimiters.mSize;
 			for (int i = 0; i < size; i++)
 			{
 				if (c == currentD[i]) return true;
@@ -226,7 +226,7 @@ struct strutil {
 			/*If offset >= string's length, retun StringOver*/
 			if (mOffset >= stringLen) return StringOver;
 			/*Find the first char of the specified string*/
-			int currentPos = mOffset;
+			size_t currentPos = mOffset;
 			while (mString[currentPos] != startC)
 			{
 				currentPos++;
@@ -299,7 +299,7 @@ struct strutil {
 			/*If offset >= string's length, retun StringOver*/
 			if (mOffset >= stringLen) return StringOver;
 			/*Find the first char of the specified string*/
-			int currentPos = mOffset;
+			size_t currentPos = mOffset;
 			while (mString[currentPos] != startC)
 			{
 				currentPos++;
@@ -334,7 +334,7 @@ struct strutil {
 	protected:
 		size_t mOffset;
 		const char * mString;
-		int stringLen;
+		size_t stringLen;
 		char mToken[MAX_TOKEN_STRING_SIZE];
 		Delimiter mDelimiters;
 	};

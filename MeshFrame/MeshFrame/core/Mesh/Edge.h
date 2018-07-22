@@ -96,10 +96,11 @@ public:
 		return false;
 	}
 	virtual ColorUnion & color() {
+		static ColorUnion _color;
 		printf("Face does not have normal!\n");
 		assert(false);
 		system("pause");
-		return ColorUnion();
+		return _color;
 	}
 protected:
 

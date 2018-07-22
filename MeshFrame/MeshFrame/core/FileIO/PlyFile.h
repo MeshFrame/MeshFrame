@@ -37,6 +37,10 @@ Reason: To better fit the meshlib library
 #ifndef __PLYFILE_H__
 #define __PLYFILE_H__
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 #define USE_PLY_WRAPPER 1
 
 #ifndef WIN32
@@ -46,6 +50,7 @@ Reason: To better fit the meshlib library
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 #include <stdlib.h>
 #include <stdio.h>
