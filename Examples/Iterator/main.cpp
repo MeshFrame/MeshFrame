@@ -1,5 +1,3 @@
-
-
 #include <MeshFrame/core/Mesh/BaseMesh.h>
 #include <MeshFrame/core/Mesh/Vertex.h>
 #include <MeshFrame/core/Mesh/HalfEdge.h>
@@ -27,7 +25,11 @@ int main(int argc, char ** argv) {
 
 	M mesh;
 	//A sample from MeshLab
-	mesh.read_ply("Laurana50k.ply");
+	clock_t time1 = clock();
+	mesh.read_ply("./Laurana50k.ply");
+	time1 = clock() - time1;
+	printf("Time consumption in loading: %d\n", time1);
+	getchar();
 
 	//Usage of MVIterator, to iterate all vertices in mesh
 	for (M::VPtr pV : It::MVIterator(&mesh))

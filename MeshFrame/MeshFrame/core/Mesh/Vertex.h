@@ -9,8 +9,6 @@
 #define  _MESHLIB_VERTEX_H_
 
 #include <stdlib.h>
-#include <string>
-#include <list>
 #include "../Geometry/Point.h"
 #include "../Geometry/Point2.h"
 #include "../Memory/Array.h"
@@ -176,13 +174,18 @@ inline CHalfEdge *  CVertex::most_ccw_in_halfedge()
 	CHalfEdge * he = m_halfedge->ccw_rotate_about_target();
 	CHalfEdge * pStartHE = he;
 	//rotate to the most ccw in halfedge
+	int numHEs = m_outHEs.size();
+	int numHEIterated = 0;
 	while( he != NULL )
 	{
-		m_halfedge = he;
-		he = m_halfedge->ccw_rotate_about_target();
-		if (he == pStartHE) {
+		if (numHEIterated >= numHEs) {
 			break;
 		}
+
+		m_halfedge = he;
+		he = m_halfedge->ccw_rotate_about_target();
+		
+		++numHEIterated;
 	}
 	// the halfedge of the vertex becomes the most ccw in halfedge
 	return m_halfedge;

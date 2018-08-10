@@ -22,7 +22,7 @@ public:
 	~MemoryPool();
 	
 	/*Construct*/
-	MemoryPool(size_t preAllocate, rsize_t newBlockSize = DEFAULT_BLOCK_SIZE);
+	MemoryPool(size_t preAllocate, size_t newBlockSize = DEFAULT_BLOCK_SIZE);
 	/*Reserve memory*/
 	bool reserve(size_t preAllocate);
 	/*Generate a new member of type T and return its pointer*/
@@ -103,7 +103,7 @@ inline MemoryPool<T>::~MemoryPool()
 }
 
 template<typename T>
-inline MemoryPool<T>::MemoryPool(size_t preAllocate, rsize_t newBlockSize)
+inline MemoryPool<T>::MemoryPool(size_t preAllocate, size_t newBlockSize)
 	: memberTSize(sizeof(T)),
 	blockSize(newBlockSize)
 {

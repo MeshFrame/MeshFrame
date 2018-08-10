@@ -108,7 +108,7 @@ namespace Parser {
 				if (keySize >= MAX_TOKEN_STRING_SIZE) {
 					return TokenOut;
 				}
-				SAFE_STRCPY(mToken.mKey, mKey);
+				SAFE_STRCPY(mToken.mKey, mKey, MAX_TOKEN_STRING_SIZE);
 				mToken.mKey[keySize] = '\0';
 				return Failure;
 			}
@@ -133,14 +133,14 @@ namespace Parser {
 			if (keySize >= MAX_TOKEN_STRING_SIZE) {
 				return TokenOut;
 			}
-			SAFE_STRCPY(mToken.mKey, mKey);
+			SAFE_STRCPY(mToken.mKey, mKey, MAX_TOKEN_STRING_SIZE);
 			mToken.mKey[keySize] = '\0';
 
 			size_t valueSize = strlen(mValue);
 			if (valueSize >= MAX_TOKEN_STRING_SIZE) {
 				return TokenOut;
 			}
-			SAFE_STRCPY(mToken.mValue, mValue);
+			SAFE_STRCPY(mToken.mValue, mValue, MAX_TOKEN_STRING_SIZE);
 			mToken.mValue[valueSize] = '\0';
 
 			return Success;

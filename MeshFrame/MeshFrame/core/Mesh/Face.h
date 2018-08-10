@@ -8,7 +8,6 @@
 *	   \Update 31/05/2017
 */
 #include <assert.h>
-#include <string>
 #include "../Geometry/Point.h"
 #include "Color.h"
 

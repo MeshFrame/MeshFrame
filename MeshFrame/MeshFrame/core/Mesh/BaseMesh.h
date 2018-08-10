@@ -29,6 +29,7 @@
 #include "../Parser/IOFuncDef.h"
 #include "../Memory/MemoryPool.h"
 #include "../FileIO/PlyFile.h"
+#include "HalfEdge.h"
 #include "Props.h"
 
 namespace MeshLib {
@@ -523,19 +524,19 @@ namespace MeshLib {
 		/*!
 		Container of the vertices of the mesh.
 		*/
-		typename VContainer &		getVContainer() { return mVContainer; };
+		VContainer &		getVContainer() { return mVContainer; };
 		/*!
 		Container of the faces of the mesh.
 		*/
-		typename FContainer &	getFContainer() { return mFContainer; };
+		FContainer &	getFContainer() { return mFContainer; };
 		/*!
 		Container of the edges of the mesh.
 		*/
-		typename EContainer &		getEContainer() { return mEContainer; };
+		EContainer &		getEContainer() { return mEContainer; };
 		/*!
 		Container of the halfedges of the mesh.
 		*/
-		typename HEContainer &	getHEContainer() { return mHEContainer; };
+		HEContainer &	getHEContainer() { return mHEContainer; };
 
 	protected:
 		//Maps
@@ -690,7 +691,7 @@ namespace MeshLib {
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
 	FaceType * CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::edgeFace1(EPtr pE)
 	{
-		assert(e->halfedge() != NULL);
+		assert(pE->halfedge() != NULL);
 		return (FaceType*)pE->halfedge()->face();
 	};
 	/*!
@@ -701,11 +702,13 @@ namespace MeshLib {
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
 	FaceType * CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::edgeFace2(EPtr pE)
 	{
-		assert(e->halfedge() != NULL);
-		if (e->halfedge()->sym() == NULL) return NULL
+		assert(pE->halfedge() != NULL);
+		if (pE->halfedge()->sym() == NULL) {
+			return NULL;
+		}
 		else
 		{
-			return (FaceType*)e->halfedge()->sym()->face();
+			return (FaceType*)pE->halfedge()->sym()->face();
 		}
 	};
 
@@ -729,7 +732,7 @@ namespace MeshLib {
 	\return the halfedge attaching to edge e.
 	*/
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
-	inline HalfEdgeType * CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::edgeHalfedge(EPtr e)
+	inline HalfEdgeType * CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::edgeHalfedge(EPtr pE)
 	{
 		return (FaceType*)pE->halfedge();
 	};
@@ -1576,7 +1579,7 @@ namespace MeshLib {
 			EdgeType* currentE = edge;
 			HalfEdgeType* currentHE[2];
 			currentHE[0] = (HalfEdgeType*)currentE->halfedge(0);
-			currentHe[1] = (HalfEdgeType*)currentE->halfedge(1);
+			currentHE[1] = (HalfEdgeType*)currentE->halfedge(1);
 			assert(currentHE[0] != NULL);
 			if (currentHE[1] != NULL)
 			{
@@ -1596,32 +1599,29 @@ namespace MeshLib {
 		}
 		/*Remove isolated vertex*/
 		std::vector<VertexType*> isolatedVertexs;
-		for (auto vertex : mVContainer)
+		for (auto pV : mVContainer)
 		{
-			VertexType* currentV = vertex;
-			if (currentV->halfedge() != NULL) continue;
-			isolatedVertexs.push_back(currentV);
+			if (pV->halfedge() != NULL) continue;
+			isolatedVertexs.push_back(pV);
 		}
-		for (auto vertex : isolatedVertexs)
+		for (auto pV : isolatedVertexs)
 		{
-			VertexType* currentV = vertex;
-			mVContainer.deleteMember(currentV->index());
-			currentV = NULL;
+			mVContainer.deleteMember(pV->index());
 		}
 		/*
 		*	Arrange the boundary half_edge of boundary vertices, to make its halfedge
 		*	to be the most ccw in half_edge
 		*/
-		for (auto vertex : mVContainer)
+		for (auto pV : mVContainer)
 		{
-			VertexType* currentV = vertex;
-			if (!v->boundary()) continue;
-			HalfEdgeType* currentHE = (HalfEdgeType*)currentV->halfedge();
+			
+			if (!pV->boundary()) continue;
+			HalfEdgeType* currentHE = (HalfEdgeType*)pV->halfedge();
 			while (currentHE->he_sym() != NULL)
 			{
 				currentHE = (HalfEdgeType*)currentHE->ccw_rotate_about_target();
 			}
-			currentV->halfedge() = currentHE;
+			pV->halfedge() = currentHE;
 		}
 	}
 
@@ -2283,7 +2283,7 @@ namespace MeshLib {
 
 		FILE *fp = fopen(output, "wb");
 		if (!fp) {
-			std::cout << "Fail to open output file: " << output << std::endl;
+			printf("Fail to open output file: %s\n", output);
 			return;
 		}
 
@@ -2689,7 +2689,7 @@ namespace MeshLib {
 
 		FILE *fp = fopen(output, "wb");
 		if (!fp) {
-			std::cout << "Fail to open output file: " << output << endl;
+			printf("Fail to open output file: %s\n", output);
 			return;
 		}
 		for (VertexType *pV : mVContainer) {

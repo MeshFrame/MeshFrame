@@ -384,7 +384,7 @@ inline PlyFile * PlyFileReader::ply_write(
 	for (int i = 0; i < nelems; i++) {
 		elem = (PlyElement *)myalloc(sizeof(PlyElement));
 		plyfile->elems[i] = elem;
-		SAFE_STRCPY(elem->elemName, elem_names[i]);
+		SAFE_STRCPY(elem->elemName, elem_names[i], MAX_TOKEN_STRING_SIZE);
 		elem->eleNum = 0;
 		elem->propNum = 0;
 	}
@@ -478,84 +478,84 @@ inline void PlyFileReader::ply_describe_property(
 	elem_prop = (PlyProperty *)myalloc(sizeof(PlyProperty));
 	if (propType == PLY_NAME_MARK::PLY_X)
 	{
-		SAFE_STRCPY(elem_prop->propName, "x");
+		SAFE_STRCPY(elem_prop->propName, "x", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_X;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_Y)
 	{
-		SAFE_STRCPY(elem_prop->propName, "y");
+		SAFE_STRCPY(elem_prop->propName, "y", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_Y;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_Z)
 	{
-		SAFE_STRCPY(elem_prop->propName, "z");
+		SAFE_STRCPY(elem_prop->propName, "z", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_Z;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_RED)
 	{
-		SAFE_STRCPY(elem_prop->propName, "red");
+		SAFE_STRCPY(elem_prop->propName, "red", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_RED;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_GREEN)
 	{
-		SAFE_STRCPY(elem_prop->propName, "green");
+		SAFE_STRCPY(elem_prop->propName, "green", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_GREEN;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_BLUE)
 	{
-		SAFE_STRCPY(elem_prop->propName, "blue");
+		SAFE_STRCPY(elem_prop->propName, "blue", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_BLUE;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_NX)
 	{
-		SAFE_STRCPY(elem_prop->propName, "nx");
+		SAFE_STRCPY(elem_prop->propName, "nx", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_NX;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_NY)
 	{
-		SAFE_STRCPY(elem_prop->propName, "ny");
+		SAFE_STRCPY(elem_prop->propName, "ny", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_NY;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_NZ)
 	{
-		SAFE_STRCPY(elem_prop->propName, "nz");
+		SAFE_STRCPY(elem_prop->propName, "nz", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_NZ;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_U)
 	{
-		SAFE_STRCPY(elem_prop->propName, "u");
+		SAFE_STRCPY(elem_prop->propName, "u", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_U;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_V)
 	{
-		SAFE_STRCPY(elem_prop->propName, "v");
+		SAFE_STRCPY(elem_prop->propName, "v", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_V;
 		elem_prop->isList = false;
 		elem_prop->externalType = PLY_DATA_TYPE::PLY_FLOAT;
 	}
 	else if (propType == PLY_NAME_MARK::PLY_VERTEXS)
 	{
-		SAFE_STRCPY(elem_prop->propName, "vertex_indices");
+		SAFE_STRCPY(elem_prop->propName, "vertex_indices", MAX_TOKEN_STRING_SIZE);
 		elem_prop->nameMark = PLY_NAME_MARK::PLY_VERTEXS;
 		elem_prop->isList = true;
 		elem_prop->countType = PLY_DATA_TYPE::PLY_UCHAR;
@@ -1244,13 +1244,13 @@ inline void PlyFileReader::add_element(PlyFile *plyfile, char **words)
 	PlyOtherElem * otherElem;
 	/* create the new element */
 	elem = (PlyElement*)myalloc(sizeof(PlyElement));
-	SAFE_STRCPY(elem->elemName, words[1]);
+	SAFE_STRCPY(elem->elemName, words[1], MAX_TOKEN_STRING_SIZE);
 	elem->eleNum = atoi(words[2]);
 	elem->propNum = 0;
 	elem->propList = NULL;
 	/* create the new other element*/
 	otherElem = (PlyOtherElem*)myalloc(sizeof(PlyOtherElem));
-	SAFE_STRCPY(otherElem->elemName, elem->elemName);
+	SAFE_STRCPY(otherElem->elemName, elem->elemName, MAX_TOKEN_STRING_SIZE);
 	otherElem->elemCount = elem->eleNum;
 	otherElem->propNum = 0;
 	otherElem->propList = NULL;
@@ -1316,7 +1316,7 @@ inline void PlyFileReader::add_property(PlyFile *plyfile, char **words)
 	if (equal_strings(words[1], "list")) {       /* is a list */
 		prop->countType = get_prop_type(words[2]);
 		prop->externalType = get_prop_type(words[3]);
-		SAFE_STRCPY(prop->propName, words[4]);
+		SAFE_STRCPY(prop->propName, words[4], MAX_TOKEN_STRING_SIZE);
 		prop->isList = true;
 		if (equal_strings("face", elem->elemName))
 		{
@@ -1330,7 +1330,7 @@ inline void PlyFileReader::add_property(PlyFile *plyfile, char **words)
 				otherProp = (PlyOtherProperty*)myalloc(sizeof(PlyOtherProperty));
 				otherProp->countType = get_prop_type(words[2]);
 				otherProp->externalType = get_prop_type(words[3]);
-				SAFE_STRCPY(otherProp->propName, words[4]);
+				SAFE_STRCPY(otherProp->propName, words[4], MAX_TOKEN_STRING_SIZE);
 				otherProp->isList = true;
 				otherProp->ifMalloc = false;
 				otherProp->listCount = 0;
@@ -1346,7 +1346,7 @@ inline void PlyFileReader::add_property(PlyFile *plyfile, char **words)
 			otherProp = (PlyOtherProperty*)myalloc(sizeof(PlyOtherProperty));
 			otherProp->countType = get_prop_type(words[2]);
 			otherProp->externalType = get_prop_type(words[3]);
-			SAFE_STRCPY(otherProp->propName, words[4]);
+			SAFE_STRCPY(otherProp->propName, words[4], MAX_TOKEN_STRING_SIZE);
 			otherProp->isList = true;
 			otherProp->ifMalloc = false;
 			otherProp->listCount = 0;
@@ -1358,7 +1358,7 @@ inline void PlyFileReader::add_property(PlyFile *plyfile, char **words)
 	}
 	else {                                        /* not a list */
 		prop->externalType = get_prop_type(words[1]);
-		SAFE_STRCPY(prop->propName, words[2]);
+		SAFE_STRCPY(prop->propName, words[2], MAX_TOKEN_STRING_SIZE);
 		prop->isList = false;
 		if (equal_strings("vertex", elem->elemName))
 		{
@@ -1388,7 +1388,7 @@ inline void PlyFileReader::add_property(PlyFile *plyfile, char **words)
 				prop->nameMark = PLY_NAME_MARK::PLY_OTHER;
 				otherProp = (PlyOtherProperty*)myalloc(sizeof(PlyOtherProperty));
 				otherProp->externalType = get_prop_type(words[1]);
-				SAFE_STRCPY(otherProp->propName, words[2]);
+				SAFE_STRCPY(otherProp->propName, words[2], MAX_TOKEN_STRING_SIZE);
 				otherProp->isList = false;
 				otherProp->ifMalloc = false;
 				otherProp->listCount = 0;
@@ -1402,7 +1402,7 @@ inline void PlyFileReader::add_property(PlyFile *plyfile, char **words)
 			prop->nameMark = PLY_NAME_MARK::PLY_OTHER;
 			otherProp = (PlyOtherProperty*)myalloc(sizeof(PlyOtherProperty));
 			otherProp->externalType = get_prop_type(words[1]);
-			SAFE_STRCPY(otherProp->propName, words[2]);
+			SAFE_STRCPY(otherProp->propName, words[2], MAX_TOKEN_STRING_SIZE);
 			otherProp->isList = false;
 			otherProp->ifMalloc = false;
 			otherProp->listCount = 0;

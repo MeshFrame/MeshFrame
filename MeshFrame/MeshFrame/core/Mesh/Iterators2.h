@@ -4,6 +4,7 @@
 #include <list>
 #include <vector>
 
+#include "BaseMesh.h"
 #include "HalfEdge.h"
 
 namespace MeshLib {
@@ -24,7 +25,7 @@ namespace MeshLib {
 			VOutHEIterator(const VPtr& pV, CHalfEdge ** iter) : _pV(pV), _iter(iter) {};
 
 			VOutHEIterator& operator++() { ++_iter; return *this; };
-			VOutHEIterator  operator++(int) { VOutHEIterator tmp(_pV, _Iter); ++_iter; return tmp; };
+			VOutHEIterator  operator++(int) { VOutHEIterator tmp(_pV, _iter); ++_iter; return tmp; };
 
 			bool operator==(const VOutHEIterator& otherIter) { return _iter == otherIter._iter; }
 			bool operator!=(const VOutHEIterator& otherIter) { return _iter != otherIter._iter; }
@@ -56,7 +57,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VCcwOutHEIterator  operator++(int) {
-				VCcwOutHEIterator tmp(_pV, _Iter);
+				VCcwOutHEIterator tmp = *this;
 				_pHE = _pHE == MeshType::vertexMostCcwOutHalfEdge(_pV) ? NULL : MeshType::vertexNextCcwOutHalfEdge(_pHE);
 				return tmp;
 			};
@@ -91,7 +92,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VClwInHEIterator  operator++(int) {
-				VClwInHEIterator tmp(pV, _pHE);
+				VClwInHEIterator tmp(_pV, _pHE);
 				_pHE = _pHE == MeshType::vertexMostClwInHalfEdge(_pV) ? _pHE = NULL : MeshType::vertexNextClwInHalfEdge(_pHE);
 				return tmp;
 			};
@@ -119,7 +120,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VCcwFIterator  operator++(int) {
-				VCcwFIterator tmp(_pV, _Iter);
+				VCcwFIterator tmp = *this;
 				_pHE = _pHE == MeshType::vertexMostCcwOutHalfEdge(_pV) ? NULL : MeshType::vertexNextCcwOutHalfEdge(_pHE);
 				return tmp;
 			};
@@ -149,7 +150,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VClwFIterator  operator++(int) {
-				VClwFIterator tmp(pV, _pHE);
+				VClwFIterator tmp(_pV, _pHE);
 				_pHE = _pHE == MeshType::vertexMostClwInHalfEdge(_pV) ? _pHE = NULL : MeshType::vertexNextClwInHalfEdge(_pHE);
 				return tmp;
 			};
@@ -191,7 +192,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VCcwEIterator  operator++(int) {
-				VCcwEIterator tmp(pV, pHE);
+				VCcwEIterator tmp(_pV, _pHE);
 				if (isboundary(_pV)) {
 					if (_pHE == MeshType::vertexMostCcwInHalfEdge(_pV)) {
 						_pHE = (HEPtr)_pHE->he_prev();
@@ -249,7 +250,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VClwEIterator  operator++(int) {
-				VClwEIterator tmp(pV, pHE);
+				VClwEIterator tmp(_pV, _pHE);
 				if (isboundary(_pV)) {
 					if (_pHE == MeshType::vertexMostClwInHalfEdge(_pV)) {
 						_pHE = (HEPtr)_pHE->he_next();
@@ -310,7 +311,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VVIterator  operator++(int) {
-				VVIterator tmp(_pV, _Iter); 
+				VVIterator tmp(_pV, _iter); 
 				if (MeshType::isBoundary(_pV)) {
 					if (_pLastV != NULL) {
 						++_iter;
@@ -378,7 +379,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VCcwVIterator  operator++(int) {
-				VCcwVIterator tmp(pV, pHE);
+				VCcwVIterator tmp(_pV, _pHE);
 				if (isboundary(_pV)) {
 					if (_pHE == MeshType::vertexMostCcwInHalfEdge(_pV)) {
 						_pHE = (HEPtr)_pHE->he_prev();
@@ -444,7 +445,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VClwVIterator  operator++(int) {
-				VClwVIterator tmp(pV, pHE);
+				VClwVIterator tmp(_pV, _pHE);
 				if (isboundary(_pV)) {
 					if (_pHE == MeshType::vertexMostClwInHalfEdge(_pV)) {
 						_pHE = (HEPtr)_pHE->he_next();
@@ -516,7 +517,7 @@ namespace MeshLib {
 				return *this;
 			};
 			VEIterator  operator++(int) {
-				VEIterator tmp(_pV, _Iter); if (MeshType::isBoundary(_pV)) {
+				VEIterator tmp(_pV, _iter); if (MeshType::isBoundary(_pV)) {
 					if (_pLastE != NULL) {
 						++_iter;
 						_pLastE = NULL;
@@ -567,7 +568,7 @@ namespace MeshLib {
 			VFIterator(VPtr pV) : _pV(pV), _iter(pV->outHEs().begin()) {};
 
 			VFIterator& operator++() { ++_iter; return *this; };
-			VFIterator  operator++(int) { VFIterator tmp(_pV, _Iter); ++_iter; return tmp; };
+			VFIterator  operator++(int) { VFIterator tmp(_pV, _iter); ++_iter; return tmp; };
 
 			bool operator==(const VFIterator& otherIter) { return _iter == otherIter._iter; }
 			bool operator!=(const VFIterator& otherIter) { return _iter != otherIter._iter; }
@@ -676,7 +677,7 @@ namespace MeshLib {
 			MVIterator(MeshPtr pM) : _pM(pM), _iter(pM->vertices().begin()) {};
 
 			MVIterator& operator++() { ++_iter; return *this; };
-			MVIterator  operator++(int) { MVIterator tmp(_pM, _Iter); ++_iter; return tmp; };
+			MVIterator  operator++(int) { MVIterator tmp(_pM, _iter); ++_iter; return tmp; };
 
 			bool operator==(const MVIterator& otherIter) { return _iter == otherIter._iter; }
 			bool operator!=(const MVIterator& otherIter) { return _iter != otherIter._iter; }
@@ -697,7 +698,7 @@ namespace MeshLib {
 			MFIterator(MeshPtr pM) : _pM(pM), _iter(pM->faces().begin()) {};
 
 			MFIterator& operator++() { ++_iter; return *this; };
-			MFIterator  operator++(int) { MFIterator tmp(_pM, _Iter); ++_iter; return tmp; };
+			MFIterator  operator++(int) { MFIterator tmp(_pM, _iter); ++_iter; return tmp; };
 
 			bool operator==(const MFIterator& otherIter) { return _iter == otherIter._iter; }
 			bool operator!=(const MFIterator& otherIter) { return _iter != otherIter._iter; }
@@ -718,7 +719,7 @@ namespace MeshLib {
 			MEIterator(MeshPtr pM) : _pM(pM), _iter(pM->edges().begin()) {};
 
 			MEIterator& operator++() { ++_iter; return *this; };
-			MEIterator  operator++(int) { MEIterator tmp(_pM, _Iter); ++_iter; return tmp; };
+			MEIterator  operator++(int) { MEIterator tmp(_pM, _iter); ++_iter; return tmp; };
 
 			bool operator==(const MEIterator& otherIter) { return _iter == otherIter._iter; }
 			bool operator!=(const MEIterator& otherIter) { return _iter != otherIter._iter; }

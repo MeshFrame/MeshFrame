@@ -9,7 +9,6 @@
 
 #include  <assert.h>
 #include <math.h>
-#include <string>
 
 #define STRINGSIZE 256
 
@@ -76,7 +75,7 @@ public:
 
 protected:
 	/*! Index, current halfedge's index*/
-	size_t			  m_index = NULL;
+	size_t			  m_index = 0;
 	/*! Edge, current halfedge attached to. */
 	CEdge       *     m_edge = NULL;
 	/*! Face, current halfedge attached to. */

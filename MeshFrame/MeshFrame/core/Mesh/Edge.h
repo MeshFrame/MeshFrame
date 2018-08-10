@@ -11,7 +11,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string>
 #include "HalfEdge.h"
 
 #define STRINGSIZE 256
