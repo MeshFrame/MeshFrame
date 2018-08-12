@@ -61,23 +61,32 @@ int DynamicMeshM::calcEdgeCost(DMesh::EPtr pE)
     Matrix3d Q = pV1->dist() + pV2->dist();
     Vector3d b = pV1->dn() + pV2->dn();
     double detQ = Q.determinant();
-    if (detQ != 0)
+    if (abs(detQ-0)>DBL_MIN)
     {
         Vector3d v = Q.lu().solve(-b);
-        double d2 = pV1->d() + pV2->d();
-
-        pE->cost() = (v.transpose()*Q*v + b.transpose()*v * 2)(0, 0) + d2;
-        for (int i = 0; i < 3; i++)
+        if (std::isnan(v(0))|| std::isnan(v(1)) || std::isnan(v(2)))
         {
-            pE->new_position()[i] = v(i);
+            pE->cost() = 100;
+            pE->new_position() = (pV1->point() + pV2->point()) / 2.0;
         }
+        else
+        {
+            double d2 = pV1->d() + pV2->d();
+
+            pE->cost() = (v.transpose()*Q*v + b.transpose()*v * 2)(0, 0) + d2;
+
+            for (int i = 0; i < 3; i++)
+            {
+                pE->new_position()[i] = v(i);
+            }
+        }
+
     }
     else
     {
         pE->cost() = 100;
-        pE->new_position() = (pV1->point() + pV2->point()) / 2;
+        pE->new_position() = (pV1->point() + pV2->point()) / 2.0;
     }
-
     return 0;
 }
 
@@ -165,17 +174,29 @@ int DynamicMeshM::simplify(int target)
 {
     initialize();
     setPriorityQ();
+
     while (mesh.numFaces() > target)
     {
+        int tempFnum = mesh.faces().size();
         DMEdge* e = selectEdge();
-        if (e == NULL) { std::cout << "null e occur" << "\n"; }
-        if (e != NULL) { edgecollapse(e); }
+        if (e == NULL) continue;//null e occur
+        if (e != NULL) {
+            edgecollapse(e);
+            if (tempFnum == mesh.numFaces())
+            {
+                std::cout << "target num is too small to preserve topology of the mesh" << "\n";
+                system("pause");
+                return 0;
+            }
+        }
+        
     }
     return 0;
 }
 
 bool DynamicMeshM::legalEdgeCollapse(DMesh::EPtr pE)
 {
+    if (pE->halfedge()->edge() == NULL) return false;
     DMesh::VPtr ev1 = mesh.edgeVertex1(pE);
     DMesh::VPtr ev2 = mesh.edgeVertex2(pE);
     DMesh::VPtr vo1 = (DMesh::VPtr)pE->halfedge()->he_next()->target();
