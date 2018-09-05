@@ -15,6 +15,8 @@
 
 #include <Eigen/Dense>
 #include <Eigen/LU>
+
+#include <fstream>
 using Eigen::Matrix3d;
 using Eigen::Vector3d;
 
@@ -86,6 +88,37 @@ public:
     int simplify(int target);
     void read_obj(const char * filename) { mesh.read_obj(filename); };
     void write_obj(const char * filename) { mesh.write_obj(filename); };
+
+	void write_test(const char * output)
+	{
+		std::fstream _os(output, std::fstream::out);
+		if (_os.fail())
+		{
+			std::cerr << "error in opening file " << output << std::endl;
+			return;
+		}
+		int vid = 0;
+		for (DMesh::VPtr pV : Iter::MVIterator(&mesh))
+		{
+			pV->id() = ++vid;
+		}
+		for (DMesh::VPtr pV : Iter::MVIterator(&mesh))
+		{
+			_os << "v " << pV->point() << "\n";
+		}
+		for (DMesh::FPtr pF : Iter::MFIterator(&mesh))
+		{
+			_os << "f";
+			DMesh::HEPtr pHe = (DMesh::HEPtr)pF->halfedge();
+			do {
+				int vid = pHe->target()->id();
+				_os << " " << vid << "/" << vid << "/" << vid;
+				pHe = (DMesh::HEPtr)pHe->he_next();
+			} while (pHe != (DMesh::HEPtr)pF->halfedge());
+			_os << "\n";
+		}
+
+	}
 protected:
     CPoint mfaceNormal(DMesh::FPtr pF);
     int initialize();

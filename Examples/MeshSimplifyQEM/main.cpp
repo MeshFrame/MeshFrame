@@ -39,7 +39,16 @@ int main(int argc, char** argv)
 {
     clock_t timeReadm = clock();
     DynamicMeshM mesh;
-    mesh.read_obj(argv[1]);
+	mesh.read_obj(argv[1]);
+
+
+	CMeshViewer viewer1;
+	pMeshViewer = &viewer1;
+	viewer1.setMeshPointer(&mesh, true, true);
+	viewer1.setUserKeyFunc(myKeyFunc);
+	printf("Show mesh.\n");
+	viewer1.show();
+
     mesh.simplify(atoi(argv[3]));
 
     timeReadm = clock() - timeReadm;

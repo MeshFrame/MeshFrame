@@ -2321,8 +2321,6 @@ namespace MeshLib {
 			fprintf(fp, "f");
 
 			do {
-				int i = gVP(vObjIdHdl, halfedgeTarget(pH));
-				
 				fprintf(fp, " %d", gVP(vObjIdHdl, halfedgeTarget(pH)));
 				pH = faceNextCcwHalfEdge(pH);
 			} while (pH != pHBegin);
