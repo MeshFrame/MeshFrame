@@ -95,6 +95,7 @@ int main(int argc, char ** argv) {
 	pMeshViewer = &viewer;
 	viewer.setMeshPointer(&m, true, true);
 	viewer.setUserKeyFunc(myKeyFunc);
+	viewer.setTexture(argv[2]);
 	printf("Show mesh.\n");
 	viewer.show();
 	m.write_ply("mesh.ply");

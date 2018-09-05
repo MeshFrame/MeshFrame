@@ -175,7 +175,7 @@ namespace MeshLib {
             enterHalfedge(pHe, (VertexType *)pHe->he_prev()->vertex());
             enterHalfedge((HalfEdgeType *)pHe->he_next(), (VertexType *)pHe->vertex());
         }
-        deleteVertex(pVt);
+        //deleteVertex(pVt);
     }
 
     template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
@@ -225,7 +225,7 @@ namespace MeshLib {
                 enterHalfedge(pHe, (VertexType *)pHe->he_prev()->vertex());
                 enterHalfedge((HalfEdgeType *)pHe->he_next(), (VertexType *)pHe->vertex());
             }
-            deleteVertex(pVt);
+            //deleteVertex(pVt);
         }
         else
         {
