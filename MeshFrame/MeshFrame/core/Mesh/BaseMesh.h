@@ -734,7 +734,7 @@ namespace MeshLib {
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
 	inline HalfEdgeType * CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::edgeHalfedge(EPtr pE)
 	{
-		return (FaceType*)pE->halfedge();
+		return (HalfEdgeType*)pE->halfedge();
 	};
 
 	//access he->f
