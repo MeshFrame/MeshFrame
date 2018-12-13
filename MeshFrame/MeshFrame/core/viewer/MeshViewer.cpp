@@ -273,17 +273,17 @@ void keyBoard(unsigned char key, int x, int y)
 {
 	switch (key)
 	{
-	case 'F':
+	case '>':
 		//Flat Shading
 		glPolygonMode(GL_FRONT, GL_FILL);
 		glSetting.shadeFlag = GLSetting::_face;
 		break;
-	case 'S':
+	case '<':
 		//Smooth Shading
 		glPolygonMode(GL_FRONT, GL_FILL);
 		glSetting.shadeFlag = GLSetting::_vertex;
 		break;
-	case 'W':
+	case '/':
 		//Wireframe mode
 		glPolygonMode(GL_FRONT, GL_LINE);
 		break;
@@ -650,8 +650,10 @@ void MeshLib::CMeshViewer::setMeshPointer(void * pNewM, bool toComputeN, bool to
 		copyVColor();
 	}
 
-	if (copyFields && pMesh->faces().front().hasColor()) {
-		copyFColor();
+	if (pMesh->faces().size() != 0) {
+		if (copyFields && pMesh->faces().front().hasColor()) {
+			copyFColor();
+		}
 	}
 
 	//if (copyFields && pMesh->edges().front().hasColor()) {

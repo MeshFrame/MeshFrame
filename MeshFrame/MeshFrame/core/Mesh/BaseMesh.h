@@ -103,7 +103,7 @@ namespace MeshLib {
 		Read an .obj file.
 		\param filename the input .obj file name
 		*/
-		void			read_obj(const char * filename);
+		void			read_obj(const char * filename, bool removeIsolatedVertices = true);
 		/*!
 		Write an .obj file.
 		\param output the output .obj file name
@@ -2132,7 +2132,7 @@ namespace MeshLib {
 	//\param input the input obj file name
 	//*/
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
-	inline void CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::read_obj(const char * fileName)
+	inline void CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::read_obj(const char * fileName, bool removeIsolatedVertices)
 	{
 		FILE * pFile;
 		/*Open file*/
@@ -2242,23 +2242,27 @@ namespace MeshLib {
 				currentHE0->target()->boundary() = true;
 			}
 		}
-		/*Remove isolated vertex*/
-		std::vector<VertexType*> isolatedVertexs;
-		//#pragma omp parallel for
-		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
+		if (removeIsolatedVertices)
 		{
-			VertexType* currentV = mVContainer.getPointer(i);
-			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
+			/*Remove isolated vertex*/
+			std::vector<VertexType*> isolatedVertexs;
+			//#pragma omp parallel for
+			for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 			{
-				if (currentV->halfedge() != NULL) continue;
-				isolatedVertexs.push_back(currentV);
+				VertexType* currentV = mVContainer.getPointer(i);
+				if (mVContainer.hasBeenDeleted(currentV->index()) == false)
+				{
+					if (currentV->halfedge() != NULL) continue;
+					isolatedVertexs.push_back(currentV);
+				}
+			}
+			for (auto vertex : isolatedVertexs)
+			{
+				VertexType* currentV = vertex;
+				mVContainer.deleteMember(currentV->index());
 			}
 		}
-		for (auto vertex : isolatedVertexs)
-		{
-			VertexType* currentV = vertex;
-			mVContainer.deleteMember(currentV->index());
-		}
+		
 		/*
 		*	Arrange the boundary half_edge of boundary vertices, to make its halfedge
 		*	to be the most ccw in half_edge
