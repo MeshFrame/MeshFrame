@@ -238,6 +238,7 @@ inline T * MemoryPool<T>::getPointer(const size_t & index)
 template<typename T>
 inline bool MemoryPool<T>::deleteMember(size_t index)
 {
+	// Access exceeds boundary
 	assert(index <  blockSize * memoryBlockPtrVec.size());
 	//std::lock_guard<std::mutex> newMemberLockGuard(newMemberLock);
 	//std::lock_guard<std::mutex> deleteMemberLockGuard(deleteMemberLock);

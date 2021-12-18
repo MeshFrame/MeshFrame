@@ -79,7 +79,7 @@ public:
 		return false;
 	}
 	virtual ColorUnion & color() {
-		printf("Face does not have normal!\n");
+		printf("Face does not have color!\n");
 		static ColorUnion _color;
 		assert(false);
 		system("pause");

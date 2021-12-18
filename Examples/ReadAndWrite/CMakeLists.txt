@@ -6,9 +6,10 @@ else()
 	message("Defined environment variable:MESHFRAME_DIRECTORY:")
 	message( $ENV{MESHFRAME_DIRECTORY})
 endif() 
+include_directories($ENV{MESHFRAME_DIRECTORY})
 
 project(ReadAndWirteMesh)
-include_directories($ENV{MESHFRAME_DIRECTORY})
+
 
 file(GLOB SRC
     "*.cpp"

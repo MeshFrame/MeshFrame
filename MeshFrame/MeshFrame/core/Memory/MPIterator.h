@@ -52,6 +52,7 @@ public:
 	MPIterator<T> &	operator++()
 	{
 		mIndex++;
+		// if already meets the last element, it will not proceed;
 		if (mIndex >= mSize) return *this;
 		mBlockOffset++;
 		if (mBlockOffset >= mBlockSize)

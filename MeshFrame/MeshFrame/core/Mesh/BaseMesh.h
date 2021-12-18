@@ -129,6 +129,11 @@ namespace MeshLib {
 		void			mesh_ply_put_element(PlyFile* plyFile, void* voidPtr, MeshType meshType, PlyFileReader* plyFileReader);
 		/*Get current element information from ply file*/
 		void*			mesh_ply_get_element(PlyFile* plyFile, PlyElement* currentEle, PlyOtherElem* currentOtherEle, MeshType meshType, PlyFileReader* plyFileReader);
+
+		/* reinitialize id() to make sure all the undeleted vertices' id() arrange tightly from 0 to N, may need to call it after deleting vertices */
+		void            reinitializeVId();
+		/* reinitialize id() to make sure all the undeleted vertices' id() arrange tightly from 0 to N, may need to call it after deleting faces */
+		void            reinitializeFId();
 		/*!
 		Write an .ply file.
 		\param output the output .ply file name
@@ -703,12 +708,12 @@ namespace MeshLib {
 	FaceType * CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::edgeFace2(EPtr pE)
 	{
 		assert(pE->halfedge() != NULL);
-		if (pE->halfedge()->sym() == NULL) {
+		if (pE->halfedge()->he_sym() == NULL) {
 			return NULL;
 		}
 		else
 		{
-			return (FaceType*)pE->halfedge()->sym()->face();
+			return (FaceType*)pE->halfedge()->he_sym()->face();
 		}
 	};
 
@@ -1728,6 +1733,32 @@ namespace MeshLib {
 		if (fileType == PLY_FILE_TYPE::PLY_ASCII)
 			fprintf(fp, "\n");
 	}
+	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
+	inline void CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::reinitializeVId()
+	{
+		int currentId = 0;
+		for (auto pV : mVContainer)
+		{
+			if (pV->halfedge() != NULL) 
+			{
+				pV->id() = currentId;
+				++currentId;
+			}
+		}
+	}
+	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
+	inline void CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::reinitializeFId()
+	{
+		int currentId = 0;
+		for (auto pF : mFContainer)
+		{
+			if (pF->halfedge() != NULL)
+			{
+				pF->id() = currentId;
+				++currentId;
+			}
+		}
+	}
 	/*!
 		Write an .ply file.
 		\param input the input .ply file name and fileType(ASCII = 1	BINARY_BE = 2	BINARY_LE = 3	PLY_BINARY_NATIVE = 4) 
@@ -2097,8 +2128,12 @@ namespace MeshLib {
 			VertexType* currentVertex = mVContainer.getPointer(i);
 			if (mVContainer.hasBeenDeleted(currentVertex->index()) == false)
 			{
-				if (currentVertex->halfedge() != NULL) continue;
-				isolatedVertexs.push_back(currentVertex);
+				if (currentVertex->halfedge() != NULL) {
+					continue;
+				}
+				else {
+					isolatedVertexs.push_back(currentVertex);
+				}
 			}
 		}
 		for (auto vertex : isolatedVertexs)
