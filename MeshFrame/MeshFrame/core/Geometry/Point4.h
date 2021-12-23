@@ -1,7 +1,6 @@
 #pragma once
 namespace MeshLib
 {
-	namespace TMeshLib {
 		/*!
 		*	\brief CPoint class, three dimensional point
 		*
@@ -186,6 +185,5 @@ namespace MeshLib
 			return CPoint4(p[0] * s, p[1] * s, p[2] * s, p[3] * s);
 		}
 
-	}//name space TMeshLib#pragma once
 }
 

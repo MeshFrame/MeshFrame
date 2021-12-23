@@ -3,6 +3,9 @@
 *      \brief Base TetMesh Class for all types of Tetrahedron Mesh Classes
 *
 *		This is the fundamental class for tetrahedral meshes
+*	   \author David Gu, Jerome Jiang
+*      \date 10/01/2011
+*	   \modified 4/16/2015
 *
 */
 
@@ -18,15 +21,24 @@
 #include <list>
 #include <vector>
 #include <map>
+#include <string>
+#include <iomanip>
+#include <iterator>
 
 #include "../Geometry/Point.h"
 #include "../Geometry/Point2.h"
-#include "../Parser/StrUtil.h"
+#include "../Parser/StrUtil_fast.h"
+#include "../Parser/IOFuncDef.h"
+#include "../Memory/MemoryPool.h"
+#include "../Memory/Array.h"
+
+#include "TProps.h"
 
 #ifndef MAX_LINE 
 #define MAX_LINE 2048
 #endif
 
+#define TMESH_ARRAY_PRE_ALLOC_SIZE 32
 namespace MeshLib
 {
 	namespace TMeshLib
@@ -40,20 +52,56 @@ namespace MeshLib
 		*  supporting .tet file formats. It offers Euler operators, each geometric primative
 		*  can access its neighbors freely.
 		*
-		* \tparam CVertex   vertex   class, derived from TMeshLib::CVertex     class
-		* \tparam CTVertex  tetrahedron vertex   class, derived from TMeshLib::CTVertex   class
-		* \tparam CHalfEdge halfedge class, derived from TMeshLib::CHalfEdge class
-		* \tparam CTEdge	tetrahedron edge class, derived from TMeshLib::CTEdge class
-		* \tparam CEdge     edge     class, derived from MeshLib::CEdge     class
-		* \tparam CFace     face     class, derived from TMeshLib::CFace     class
-		* \tparam CHalfFace half face     class, derived from TMeshLib::CHalfFace     class
-		* \tparam CTet      tetrahedron class, derived from TMeshLib::CTet class
+		* \tparam VertexType   vertex   class, derived from TMeshLib::VertexType     class
+		* \tparam TVertexType  tetrahedron vertex   class, derived from TMeshLib::TVertexType   class
+		* \tparam HalfEdgeType halfedge class, derived from TMeshLib::HalfEdgeType class
+		* \tparam TEdgeType	tetrahedron edge class, derived from TMeshLib::TEdgeType class
+		* \tparam EdgeType     edge     class, derived from MeshLib::EdgeType     class
+		* \tparam FaceType     face     class, derived from TMeshLib::FaceType     class
+		* \tparam HalfFaceType half face     class, derived from TMeshLib::HalfFaceType     class
+		* \tparam TetType      tetrahedron class, derived from TMeshLib::TetType class
 		*/
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		class CTMesh
 		{
 		public:
+			typedef TVertexType     TVType;
+			typedef VertexType      VType;
+			typedef HalfEdgeType    HEType;
+			typedef TEdgeType       TEType;
+			typedef TetType         TType;
+			typedef EdgeType        EType;
+			typedef HalfFaceType    HFType;
+			typedef FaceType        FType;
+
+			typedef TVertexType* TVPtr;
+			typedef VertexType* VPtr;
+			typedef HalfEdgeType* HEPtr;
+			typedef TEdgeType* TEPtr;
+			typedef TetType* TPtr;
+			typedef EdgeType* EPtr;
+			typedef HalfFaceType* HFPtr;
+			typedef FaceType* FPtr;
+
+			typedef  std::pair<int, VertexType*>		VMapPair;
+			typedef  std::pair<int, TetType*>			TMapPair;
+
+
+			typedef MemoryPool<VertexType>				VContainer;
+			typedef MemoryPool<TVertexType>				TVContainer;
+			typedef MemoryPool<FaceType>				FContainer;
+			typedef MemoryPool<HalfFaceType>			HFContainer;
+			typedef MemoryPool<EdgeType>				EContainer;
+			typedef MemoryPool<TEdgeType>				TEContainer;
+			typedef MemoryPool<HalfEdgeType>			HEContainer;
+			typedef MemoryPool<TetType>					TContainer;
+
+			typedef CTMesh<TVType, VType, HEType, TEType, EType, HFType, FType, TType>* Ptr;
+
+			typedef CPArray<HFPtr, TMESH_ARRAY_PRE_ALLOC_SIZE> HFArray;
+			typedef CPArray<TEPtr, TMESH_ARRAY_PRE_ALLOC_SIZE> TEArray;
+
 			/*!
 				CTMesh constructor
 				*/
@@ -65,11 +113,11 @@ namespace MeshLib
 			/*!
 				Load tet mesh from a ".tet" file
 				*/
-			void _load(const char *);
+			void _load(const char * input, bool checkOrientation = false);
 			/*!
 				Load tet mesh from a ".t" file
 				*/
-			void _load_t(const char *);
+			void _load_t(const char * input, bool checkOrientation = false);
 			/*!
 				Write tet mesh to a file
 				*/
@@ -78,25 +126,35 @@ namespace MeshLib
 			/*!
 			Write tet mesh to a .t file
 			*/
-			void _write_t(const char * filename);
+			void _write_t(const char * filename, bool highPrecision = false);
+
+			/*!
+			Write tet mesh to a .vtk file
+			*/
+			void _write_vtk(const char* filename, bool highPrecision = false);
+
+			/*!
+			Write tet mesh to a .vtk file
+			*/
+			void _write_tet_list_to_vtk(const char* filename, std::vector<TPtr> tets, bool highPrecision = false);
 
 			/*!
 				access the list of half faces
 				*/
-			std::list<CHalfFace*> & half_faces() { return m_pHalfFaces; };
+			HFContainer & half_faces() { return mHFContainer; };
 			/*!
 				access the list of edges
 				*/
-			std::list<CEdge*>       & edges() { return m_pEdges; };
+			EContainer       & edges() { return mEContainer; };
 			/*!
 				access list of faces
 				*/
-			std::list<CFace*>        & faces() { return m_pFaces; };
+			FContainer        & faces() { return mFContainer; };
 
 			/*!
 			access list of vertices
 			*/
-			std::list<CVertex*> & vertices() { return m_pVertices; };
+			VContainer & vertices() { return mVContainer; };
 
 			/*! number of tets */
 			int numTets() { return m_nTets; };
@@ -108,94 +166,176 @@ namespace MeshLib
 			int maxVertexId() { return m_maxVertexId; };
 
 			/*! Access the array of tets */
-			std::list<CTet*> & tets() { return m_pTets; };
+			TContainer & tets() { return mTContainer; };
 
 			/*! access the vertex with ID */
-			CVertex * idVertex(int id) { return m_map_Vertices[id]; };
+			VertexType * idVertex(int id) { return m_map_Vertices[id]; };
 
 			/*! access the tet with ID */
-			CTet      * idTet(int id) { return m_map_Tets[id]; };
-
+			TetType      * idTet(int id) { return m_map_Tets[id]; };
 
 
 			//Access Vertex data members
 			/*! Vertex->Edge List */
-			std::list<CEdge*> * VertexEdgeList(CVertex * pVertex);
+			static std::list<EdgeType*>* VertexEdgeList(VertexType* pVertex);
 			/*! Vertex->TEdge List */
-			std::list<CTEdge*> * VertexTEdgeList(CVertex * pVertex);
+			TEArray& VertexTEdgeList(VertexType* pVertex);
 			/*! Vertex->HalfFace List */
-			std::list<CHalfFace*> * VertexHalfFaceList(CVertex * pVertex);
+			static std::list<HalfFaceType*>* VertexHalfFaceList(VertexType* pVertex);
 			/*! Vertex->TVertex List */
-			std::list<CTVertex*> * VertexTVertexList(CVertex * pVertex);
+			static std::list<TVertexType*>* VertexTVertexList(VertexType* pVertex);
+
 			/*! Vertex->Edge */
-			CEdge   * VertexEdge(CVertex * v1, CVertex * v2);
+			static EdgeType* VertexEdge(VertexType* v1, VertexType* v2);
 
 			//Access TVertex data memebers
-			CVertex * TVertexVertex(CTVertex * pTVertex);
-			CTet * TVertexTet(CTVertex * pTVertex);
-			CHalfEdge * TVertexHalfEdge(CTVertex * pTVertex);
+			static VertexType* TVertexVertex(TVertexType* pTVertex);
+			static TetType* TVertexTet(TVertexType* pTVertex);
+			static HalfEdgeType* TVertexHalfEdge(TVertexType* pTVertex);
+			static HalfFaceType* TVertexOppositeHalfFace(TVertexType* pTVertex);
 
 			//Access TEdge data memebers
-			CHalfEdge * TEdgeLeftHalfEdge(CTEdge * pTEdge);
-			CHalfEdge * TEdgeRightHalfEdge(CTEdge * pTEdge);
-			CEdge *		TEdgeEdge(CTEdge * pTEdge);
-			CTEdge *	TEdgeDualTEdge(CTEdge * pTEdge);
-			CTet *		TEdgeTet(CTEdge * pTEdge);
+			static HalfEdgeType* TEdgeLeftHalfEdge(TEdgeType* pTEdge);
+			static HalfEdgeType* TEdgeRightHalfEdge(TEdgeType* pTEdge);
+			static EdgeType* TEdgeEdge(TEdgeType* pTEdge);
+			static TEdgeType* TEdgeDualTEdge(TEdgeType* pTEdge);
+			static TetType* TEdgeTet(TEdgeType* pTEdge);
+			static HalfFaceType* TEdgeLeftHalfFace(TEdgeType* pTEdge);
+			static HalfFaceType* TEdgeRightHalfFace(TEdgeType* pTEdge);
 
 			//Access HalfEdge data members
 			/*! HalfEdge->source vertex */
-			CVertex * HalfEdgeSource(CHalfEdge * pHalfEdge);
+			static VertexType* HalfEdgeSource(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->target vertex */
-			CVertex * HalfEdgeTarget(CHalfEdge * pHalfEdge);
+			static VertexType* HalfEdgeTarget(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->source tvertex */
-			CTVertex * HalfEdgeTSource(CHalfEdge * pHalfEdge);
+			static TVertexType* HalfEdgeTSource(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->target tvertex */
-			CTVertex * HalfEdgeTTarget(CHalfEdge * pHalfEdge);
+			static TVertexType* HalfEdgeTTarget(HalfEdgeType* pHalfEdge);
+			/*! HalfEdge->tet */
+			static TetType* HalfEdgeTet(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->dual halfedge */
-			CHalfEdge * HalfEdgeDual(CHalfEdge * pHalfEdge);
+			static HalfEdgeType* HalfEdgeDual(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->next HalfEdge */
-			CHalfEdge * HalfEdgeNext(CHalfEdge * pHalfEdge);
+			static HalfEdgeType* HalfEdgeNext(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->prev HalfEdge */
-			CHalfEdge * HalfEdgePrev(CHalfEdge * pHalfEdge);
+			static HalfEdgeType* HalfEdgePrev(HalfEdgeType* pHalfEdge);
+			/*! HalfEdge->Edge Edge */
+			static EdgeType* HalfEdgeEdge(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->TEdge TEdge */
-			CTEdge * HalfEdgeTEdge(CHalfEdge * pHalfEdge);
+			static TEdgeType* HalfEdgeTEdge(HalfEdgeType* pHalfEdge);
 			/*! HalfEdge->HalfFace */
-			CHalfFace * HalfEdgeHalfFace(CHalfEdge * pHalfEdge);
+			static HalfFaceType* HalfEdgeHalfFace(HalfEdgeType* pHalfEdge);
+			/*! Turn halfedge into vector in CPoint */
+			static CPoint HalfEdgeVec(HalfEdgeType* pHalfEdge);
 
 			//Access Edge data members
 			/*! TEdge list of the edge */
-			std::list<CTEdge*>* EdgeTEdgeList(CEdge * pEdge);
+			static std::list<TEdgeType*>* EdgeTEdgeList(EdgeType* pEdge);
 			/*! Edge->Vertex1 */
-			CVertex* EdgeVertex1(CEdge * pEdge);
+			static VertexType* EdgeVertex1(EdgeType* pEdge);
 			/*! Edge->Vertex2 */
-			CVertex* EdgeVertex2(CEdge * pEdge);
+			static VertexType* EdgeVertex2(EdgeType* pEdge);
 			/*! length of the edge*/
-			double EdgeLength(CEdge * pEdge);
+			static double EdgeLength(EdgeType* pEdge);
+			/*! squared length of the edge*/
+			static double EdgeLengthSquare(EdgeType* pEdge);
 
 			//Access HalfFace data memebers
 			/*! HalfFace->HalfEdge */
-			CHalfEdge* HalfFaceHalfEdge(CHalfFace * pHalfFace);
+			static HalfEdgeType* HalfFaceHalfEdge(HalfFaceType* pHalfFace);
 			/*! HalfFace->face */
-			CFace* HalfFaceFace(CHalfFace * pHalfFace);
+			static FaceType* HalfFaceFace(HalfFaceType* pHalfFace);
 			/*! HalfFace->Tet */
-			CTet * HalfFaceTet(CHalfFace * pHalfFace);
+			static TetType* HalfFaceTet(HalfFaceType* pHalfFace);
 			/*! HalfFace->dual half face */
-			CHalfFace * HalfFaceDual(CHalfFace * pHalfFace);
+			static HalfFaceType* HalfFaceDual(HalfFaceType* pHalfFace);
+			/*! HalfFace's opposite tvertex, i.e, the tvertex not contain in the halfface */
+			static TVertexType* HalfFaceOppositeTVertex(HalfFaceType* pHalfFace);
+			static void HalfFace3Points(HalfFaceType* pHF, CPoint* v);
+			static CPoint HalfFaceNormal(HalfFaceType* pHF);
+			static CPoint HalfFaceOrientedArea(HalfFaceType* pHF);
+			static bool PointInTet(TPtr pT, const CPoint& p);
+
+			//Operations of new a object
+			/*! New a vertex in tmesh */
+			VertexType* newVertex();
+
+			/*! Create a vertex with input id, used in the process of reading .t file, id is user defined
+			\return pointer to the new vertex
+			*/
+			VertexType* createVertexWithId(int id);
+
+			/*! Create a vertex with automatically assigned index, faster than createVertexWithId
+			* the index is its index in its containter, its id will be set to =index
+						\return pointer to the new vertex
+						*/
+			VertexType* createVertexWithIndex();
+
+			/*! Create a face with automatically assigned index, 
+			* the index is the index in its containter, its id will be set to =index
+			*
+			\return pointer to the new face
+			*/
+			FaceType* createFace();
+
+
+			/*! Create a halfface with automatically assigned index,
+			* the index is its index in its containter, its id will be set to =index
+			\return pointer to the new halfface
+			*/
+			HalfFaceType* createHalfFaceWithIndex();
+
+			/*! Create a halfedge with automatically assigned index,
+			* the index is its index in its containter, its id will be set to =index
+			\return pointer to the new halfedge
+			*/
+			HalfEdgeType* createHalfEdgeWithIndex();
+
+			/*! Create a edge with automatically assigned index,
+			* the index is its index in its containter, its id will be set to =index
+			\return pointer to the new edge
+			*/
+			EdgeType* createEdgeWithIndex();
+
+			/*! Create a tedge with automatically assigned index,
+			* the index is its index in its containter, its id will be set to =index
+			\return pointer to the new tedge
+			*/
+			TEdgeType* createTEdgeWithIndex();
+
+			/*! Create a tedge with automatically assigned index,
+			* the index is its index in its containter, its id will be set to =index
+				\return pointer to the new tedge
+				*/
+			TetType* createTetWithIndex();
+
+
+			/*! Create a vertex with input id, used in the process of reading .t file, id is user defined
+				\return pointer to the new tedge
+				*/
+			TetType* createTetWithId(int id);
 
 			//Face
 			/*! access the left half face of a face */
-			CHalfFace * FaceLeftHalfFace(CFace * pFace);
+			static HalfFaceType* FaceLeftHalfFace(FaceType* pFace);
 			/*! access the right half face of a face */
-			CHalfFace * FaceRightHalfFace(CFace * pFace);
+			static HalfFaceType* FaceRightHalfFace(FaceType* pFace);
 
 			//Tetrahedron
 
 			/*! access the j-th half edge of a tet */
-			CHalfFace* TetHalfFace(CTet * pT, int j);
+			static HalfFaceType* TetHalfFace(TetType* pT, int j);
 			/*! access the j-th tvertex of a tet */
-			CTVertex * TetTVertex(CTet * pT, int j);
+			static TVertexType* TetTVertex(TetType* pT, int j);
 			/*! access the j-th vertex of a tet */
-			CVertex * TetVertex(CTet * pT, int j);
+			static VertexType* TetVertex(TetType* pT, int j);
+			static double TetOrientedVolume(TetType* pT);
+			static CPoint TetCentroid(TetType* pT);
+
+
+			void reinitializeVIds();
+
 
 		protected:
 
@@ -205,7 +345,8 @@ namespace MeshLib
 			\tparam pT retulting tetrahedron
 			*/
 
-			void  _construct_tet(CTet* pT, int tID, int * v);
+			void  _construct_tet(TetType* pT, int tID, int * v);
+			void  _construct_tet_orientation(TetType* pT, int tId, int  v[4]);
 			/*! construct faces */
 			void  _construct_faces();
 			/*! construct edges */
@@ -213,51 +354,53 @@ namespace MeshLib
 			/*!  construct half face
 			\tparam array of vertex pointers
 			*/
-			CHalfFace*   _construct_half_face(CTVertex **);
+			HalfFaceType*   _construct_half_face(TVertexType **);
 
 			/*! release all the memory allocations */
 			void _clear();
+
+
 
 		protected:
 			/*!
 			list of faces
 			*/
-			std::list<CFace*>        m_pFaces;
+			FContainer        mFContainer;
 			/*!
 			list of half faces
 			*/
-			std::list<CHalfFace*>	 m_pHalfFaces;
+			HFContainer	 mHFContainer;
 			/*!
 			list of half edges
 			*/
-			std::list<CHalfEdge*>	 m_pHalfEdges;
+			HEContainer	 mHEContainer;
 			/*!
 			list of edges
 			*/
-			std::list<CEdge*>        m_pEdges;
+			EContainer       mEContainer;
 			/*!
 			list of tetrahedra
 			*/
-			std::list<CTEdge*>		 m_pTEdges;
+			TEContainer		 mTEContainer;
 
 			/*!
 			 array of vertices
 			 */
-			std::list<CVertex*>		 m_pVertices;
-			//CVertex *				 m_pVertices;
+			VContainer		 mVContainer;
+			//VertexType *				 mVContainer;
 
 			/*!
-			map of CVertex id and pointer
+			map of VertexType id and pointer
 			*/
-			std::map<int, CVertex *> m_map_Vertices;
+			std::map<int, VertexType *> m_map_Vertices;
 
 			/*!
 			array of tets
 			*/
-			std::list<CTet*>		 m_pTets;
-			//CTet*                    m_pTets;
+			TContainer		 mTContainer;
+			//TetType*                    mTContainer;
 
-			std::map<int, CTet*>     m_map_Tets;
+			std::map<int, TetType*>     m_map_Tets;
 
 			/*! number of vertices */
 			int m_nVertices;
@@ -271,50 +414,31 @@ namespace MeshLib
 			/*! max vertex id */
 			int m_maxVertexId;
 
+
+			MAKE_PROP_OF(V);
+			MAKE_PROP_OF(E);
+			MAKE_PROP_OF(F);
+			MAKE_PROP_OF(T);
+			MAKE_PROP_OF(HF);
+			MAKE_PROP_OF(HE);
+
+			VPropHandle<HFArray> mVHFArrayHandle;
+			VPropHandle<TEArray> mVTEArrayHandle;
+
 		};
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_clear()
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_clear()
 		{
-			for (std::list<CEdge*>::iterator eit = m_pEdges.begin(); eit != m_pEdges.end(); eit++)
-			{
-				CEdge * pE = *eit;
-				delete pE;
-			}
 
-			for (std::list<CTEdge*>::iterator eit = m_pTEdges.begin(); eit != m_pTEdges.end(); eit++)
-			{
-				CTEdge * pE = *eit;
-				delete pE;
-			}
-
-			for (std::list<CHalfEdge*>::iterator hit = m_pHalfEdges.begin(); hit != m_pHalfEdges.end(); hit++)
-			{
-				CHalfEdge * pH = *hit;
-				delete pH;
-			}
-
-
-			for (std::list<CFace*>::iterator fit = m_pFaces.begin(); fit != m_pFaces.end(); fit++)
-			{
-				CFace * pF = *fit;
-				delete pF;
-			}
-
-			for (std::list<CHalfFace*>::iterator fit = m_pHalfFaces.begin(); fit != m_pHalfFaces.end(); fit++)
-			{
-				CHalfFace * pF = *fit;
-				delete pF;
-			}
-
-			m_pVertices.clear();
-			m_pTets.clear();
-			//delete[] m_pTVertices;
 		};
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_load(const char * input)
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_load(const char * input, bool checkOrientation)
 		{
+			std::ostringstream oss;
+			std::istringstream iss;
+
 			m_maxVertexId = 0;
 
 			std::fstream is(input, std::fstream::in);
@@ -331,11 +455,11 @@ namespace MeshLib
 				is.getline(buffer, MAX_LINE);
 				//read in the number of vertices: "number vertices"
 				std::string line(buffer);
-				line = strutil::trim(line);
-				strutil::Tokenizer stokenizer(line, " \r\n");
+				line = strutilTetMesh::trim(line);
+				strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 				stokenizer.nextToken();
 				std::string token = stokenizer.getToken();
-				m_nVertices = strutil::parseString<int>(token);
+				m_nVertices = strutilTetMesh::parseString<int>(token);
 				stokenizer.nextToken();
 				token = stokenizer.getToken();
 				if (token != "vertices")
@@ -349,11 +473,11 @@ namespace MeshLib
 			is.getline(buffer, MAX_LINE);
 			//read in the number of vertices: "number tets"
 			std::string line(buffer);
-			line = strutil::trim(line);
-			strutil::Tokenizer stokenizer(line, " \r\n");
+			line = strutilTetMesh::trim(line);
+			strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 			stokenizer.nextToken();
 			std::string token = stokenizer.getToken();
-			m_nTets = strutil::parseString<int>(token);
+			m_nTets = strutilTetMesh::parseString<int>(token);
 			stokenizer.nextToken();
 			token = stokenizer.getToken();
 			if (token != "tets")
@@ -366,24 +490,19 @@ namespace MeshLib
 			for (int i = 0; i < m_nVertices && is.getline(buffer, MAX_LINE); i++)
 			{
 				std::string line(buffer);
-				line = strutil::trim(line);
-				strutil::Tokenizer stokenizer(line, " \r\n");
+				line = strutilTetMesh::trim(line);
+				strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 
 				CPoint p;
 				for (int k = 0; k < 3; k++)
 				{
 					stokenizer.nextToken();
 					std::string token = stokenizer.getToken();
-					p[k] = strutil::parseString<float>(token);
+					p[k] = strutilTetMesh::parseString<float>(token);
 				}
 
-				CVertex * v = new CVertex();
-				//CVertex & v = m_pVertices[i];
-				v->id() = i;
+				VertexType * v = createVertexWithIndex();
 				v->position() = p;
-
-				m_pVertices.push_back(v);
-				m_map_Vertices.insert(std::pair<int, CVertex*>(i, v));
 
 				if (!stokenizer.nextToken("\t\r\n")) continue;
 				std::string token = stokenizer.getToken();
@@ -404,35 +523,39 @@ namespace MeshLib
 				int vId[4];
 
 				std::string line(buffer);
-				line = strutil::trim(line);
-				strutil::Tokenizer stokenizer(line, " \r\n");
+				line = strutilTetMesh::trim(line);
+				strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 
 				//skip the first "4" in the line
 				stokenizer.nextToken();
 				std::string token = stokenizer.getToken();
+				int tid = strutilTetMesh::parseString<int>(token);
 
 				for (int k = 0; k < 4; k++)
 				{
 					stokenizer.nextToken();
 					std::string token = stokenizer.getToken();
-					vId[k] = strutil::parseString<int>(token);
+					vId[k] = strutilTetMesh::parseString<int>(token);
 				}
 
-				CTet * pT = new CTet();
-				m_pTets.push_back(pT);
-				m_map_Tets.insert(std::pair<int, CTet *>(id, pT));
+				TetType * pT = createEdgeWithIndex();
 
-				_construct_tet(pT, id, vId);
+				if (checkOrientation) {
+					_construct_tet_orientation(pT, tid, vId);
+				}
+				else {
+					_construct_tet(pT, tid, vId);
+				}
 			}
-			
+
 			_construct_faces();
 			_construct_edges();
 
 			is.close();
 
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
-				CVertex * pV = *vIter;
+				VertexType * pV = *vIter;
 				if (pV->id() > m_maxVertexId)
 				{
 					m_maxVertexId = pV->id();
@@ -440,30 +563,39 @@ namespace MeshLib
 			}
 
 			// label the boundary for faces and vertices
-			for (std::list<CFace*>::iterator fiter = m_pFaces.begin(); fiter != m_pFaces.end(); ++fiter)
+			for (auto fIter = mFContainer.begin(); fIter != mFContainer.end(); ++fIter)
 			{
-				CFace * pF = *fiter;
-
+				FPtr pF = *fIter;
 				if (this->FaceLeftHalfFace(pF) == NULL || this->FaceRightHalfFace(pF) == NULL)
 				{
 					pF->boundary() = true;
-					CHalfFace * pH = 
+					HalfFaceType * pH =
 						FaceLeftHalfFace(pF) == NULL ? FaceRightHalfFace(pF) : FaceLeftHalfFace(pF);
+					HalfEdgeType * pHE = (HalfEdgeType *)pH->half_edge();
 
 					for (int i = 0; i < 3; ++i)
 					{
+						EdgeType * pE = HalfEdgeEdge(pHE);
 						int vid = pH->key(i);
-						CVertex * v = idVertex(vid);
+						VertexType * v = idVertex(vid);
 						v->boundary() = true;
+						pE->boundary() = true;
+						pHE = HalfEdgeNext(pHE);
 					}
 				}
 			}
 		};
 
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_load_t(const char * input)
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_load_t(const char * input, bool checkOrientation)
 		{
+			std::ostringstream oss;
+			std::istringstream iss;
+
+			addVProp(mVHFArrayHandle);
+			addVProp(mVTEArrayHandle);
+
 			m_maxVertexId = 0;
 
 			std::fstream is(input, std::fstream::in);
@@ -484,8 +616,8 @@ namespace MeshLib
 			{
 				is.getline(buffer, MAX_LINE);
 				std::string line(buffer);
-				line = strutil::trim(line);
-				strutil::Tokenizer stokenizer(line, " \r\n");
+				line = strutilTetMesh::trim(line);
+				strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 
 				stokenizer.nextToken();
 				std::string token = stokenizer.getToken();
@@ -502,8 +634,8 @@ namespace MeshLib
 			for (int i = 0; i < m_nVertices && is.getline(buffer, MAX_LINE); i++)
 			{
 				std::string line(buffer);
-				line = strutil::trim(line);
-				strutil::Tokenizer stokenizer(line, " \r\n");
+				line = strutilTetMesh::trim(line);
+				strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 
 				stokenizer.nextToken();
 				std::string token = stokenizer.getToken();
@@ -517,24 +649,18 @@ namespace MeshLib
 
 				stokenizer.nextToken();
 				token = stokenizer.getToken();
-				int vid = strutil::parseString<int>(token);
+				int vid = strutilTetMesh::parseString<int>(token, iss);
 
 				CPoint p;
 				for (int k = 0; k < 3; k++)
 				{
 					stokenizer.nextToken();
 					std::string token = stokenizer.getToken();
-					p[k] = strutil::parseString<float>(token);
+					p[k] = strutilTetMesh::parseString<float>(token, iss);
 				}
 
-				CVertex * v = new CVertex();
-				//CVertex & v = m_pVertices[i];
-				v->id() = vid;
+				VertexType * v = createVertexWithId(vid);
 				v->position() = p;
-
-				m_pVertices.push_back(v);
-
-				m_map_Vertices.insert(std::pair<int, CVertex *>(vid, v));
 
 				if (!stokenizer.nextToken("\t\r\n")) continue;
 				token = stokenizer.getToken();
@@ -555,8 +681,8 @@ namespace MeshLib
 				int vId[4];
 
 				std::string line(buffer);
-				line = strutil::trim(line);
-				strutil::Tokenizer stokenizer(line, " \r\n");
+				line = strutilTetMesh::trim(line);
+				strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 
 				stokenizer.nextToken();
 				std::string token = stokenizer.getToken();
@@ -570,24 +696,24 @@ namespace MeshLib
 				//skip the first "4" in the line
 				stokenizer.nextToken();
 				token = stokenizer.getToken();
-				int tid = strutil::parseString<int>(token);
+				int tid = strutilTetMesh::parseString<int>(token, iss);
 
 
 				for (int k = 0; k < 4; k++)
 				{
 					stokenizer.nextToken();
 					std::string token = stokenizer.getToken();
-					vId[k] = strutil::parseString<int>(token);
+					vId[k] = strutilTetMesh::parseString<int>(token, iss);
 				}
 
+				TetType * pT = createTetWithId(tid);
 
-
-				CTet * pT = new CTet();
-				m_pTets.push_back(pT);
-				m_map_Tets.insert(std::pair<int, CTet *>(tid, pT));
-
-				_construct_tet(pT, tid, vId);
-
+				if (checkOrientation) {
+					_construct_tet_orientation(pT, tid, vId);
+				}
+				else {
+					_construct_tet(pT, tid, vId);
+				}
 				// read in string
 				if (!stokenizer.nextToken("\t\r\n")) continue;
 				token = stokenizer.getToken();
@@ -607,8 +733,8 @@ namespace MeshLib
 			for (int id = 0; id < m_nEdges && is.getline(buffer, MAX_LINE); id++)
 			{
 				std::string line(buffer);
-				line = strutil::trim(line);
-				strutil::Tokenizer stokenizer(line, " \r\n");
+				line = strutilTetMesh::trim(line);
+				strutilTetMesh::Tokenizer stokenizer(line, " \r\n");
 
 				stokenizer.nextToken();
 				std::string token = stokenizer.getToken();
@@ -621,16 +747,16 @@ namespace MeshLib
 
 				stokenizer.nextToken();
 				token = stokenizer.getToken();
-				int id1 = strutil::parseString<int>(token);
+				int id1 = strutilTetMesh::parseString<int>(token, iss);
 
 				stokenizer.nextToken();
 				token = stokenizer.getToken();
-				int id2 = strutil::parseString<int>(token);
+				int id2 = strutilTetMesh::parseString<int>(token, iss);
 
-				CVertex * pV1 = idVertex(id1);
-				CVertex * pV2 = idVertex(id2);
+				VertexType * pV1 = idVertex(id1);
+				VertexType * pV2 = idVertex(id2);
 
-				CEdge * pE = VertexEdge(pV1, pV2);
+				EdgeType * pE = VertexEdge(pV1, pV2);
 
 				if (!stokenizer.nextToken("\t\r\n"))
 				{
@@ -648,13 +774,13 @@ namespace MeshLib
 				}
 			}
 
-			m_nEdges = (int)m_pEdges.size();
+			m_nEdges = (int)mEContainer.size();
 
 			is.close();
 
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
-				CVertex * pV = *vIter;
+				VertexType * pV = *vIter;
 				if (pV->id() > m_maxVertexId)
 				{
 					m_maxVertexId = pV->id();
@@ -662,66 +788,69 @@ namespace MeshLib
 			}
 
 			// label the boundary for faces and vertices
-			for (std::list<CFace*>::iterator fiter = m_pFaces.begin(); fiter != m_pFaces.end(); ++fiter)
+			for (auto fIter = mFContainer.begin(); fIter != mFContainer.end(); ++fIter)
 			{
-				CFace * pF = *fiter;
-
+				FPtr pF = *fIter;
 				if (this->FaceLeftHalfFace(pF) == NULL || this->FaceRightHalfFace(pF) == NULL)
 				{
 					pF->boundary() = true;
-					CHalfFace * pH =
+					HalfFaceType * pH =
 						FaceLeftHalfFace(pF) == NULL ? FaceRightHalfFace(pF) : FaceLeftHalfFace(pF);
+					//added by Anka, mark edge as boundary
+					HalfEdgeType * pHE = (HalfEdgeType *)pH->half_edge();
 
 					for (int i = 0; i < 3; ++i)
 					{
+						EdgeType * pE = HalfEdgeEdge(pHE);
 						int vid = pH->key(i);
-						CVertex * v = idVertex(vid);
+						VertexType * v = idVertex(vid);
 						v->boundary() = true;
+						pE->boundary() = true;
+						pHE = HalfEdgeNext(pHE);
 					}
 				}
 			}
 
 			// read in traits
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
-				CVertex * pV = *vIter;
+				VertexType * pV = *vIter;
 				pV->_from_string();
 			}
 
-			for (std::list<CTet *>::iterator tIter = m_pTets.begin(); tIter != m_pTets.end(); tIter++)
+			for (auto tIter = mTContainer.begin(); tIter != mTContainer.end(); tIter++)
 			{
-				CTet * pT = *tIter;
+				TetType * pT = *tIter;
 				pT->_from_string();
 			}
 
-			for (std::list<CEdge*>::iterator eIter = m_pEdges.begin(); eIter != m_pEdges.end(); eIter++)
+			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
 			{
-				CEdge * pE = *eIter;
+				EdgeType * pE = *eIter;
 				pE->_from_string();
 			}
 
+			removeVProp(mVTEArrayHandle);
+
 		};
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		CHalfFace* CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_construct_half_face(CTVertex ** pTV)
-		{
-			CHalfFace * pHF = new CHalfFace;
-			assert(pHF != NULL);
-			m_pHalfFaces.push_back(pHF);
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 
-			CVertex * pV[3];
+		HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_construct_half_face(TVertexType ** pTV)
+		{
+			HalfFaceType* pHF = createHalfFaceWithIndex();
+
+			VertexType * pV[3];
 
 			for (int i = 0; i < 3; i++)
 			{
 				pV[i] = TVertexVertex(pTV[i]);
 			}
 
-			CHalfEdge * pH[3];
+			HalfEdgeType * pH[3];
 			for (int i = 0; i < 3; i++)
 			{
-				pH[i] = new CHalfEdge;
-				assert(pH[i] != NULL);
-				m_pHalfEdges.push_back(pH[i]);
+				pH[i] = createHalfEdgeWithIndex();
 
 				pH[i]->SetHalfFace(pHF);
 				pH[i]->SetSource(pTV[i]);
@@ -760,7 +889,7 @@ namespace MeshLib
 			assert(pHF->key(0) < pHF->key(1));
 			assert(pHF->key(1) < pHF->key(2));
 
-			CVertex * pv = m_map_Vertices[pHF->key(0)];
+			VertexType * pv = m_map_Vertices[pHF->key(0)];
 
 			pv->HalfFaces()->push_back(pHF);
 
@@ -768,30 +897,28 @@ namespace MeshLib
 		};
 
 		//construct faces
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_construct_faces()
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_construct_faces()
 		{
-			CVertex * pV = NULL;
+			VertexType * pV = NULL;
 
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
 				pV = *vIter;
 
-				std::list<CHalfFace*> * pL = VertexHalfFaceList(pV);
+				std::list<HalfFaceType*> * pL = VertexHalfFaceList(pV);
 
 				while (!pL->empty())
 				{
-					CHalfFace * pF = pL->front();
-					pL->remove(pF);
-					CFace * f = new CFace;
-					assert(f != NULL);
-					m_pFaces.push_back(f);
+					HalfFaceType * pF = pL->front();
+					pL->pop_front();
+					FaceType* f = createFace();
 					f->SetLeft(pF);
 					pF->SetFace(f);
 
-					for (std::list<CHalfFace*>::iterator it = pL->begin(); it != pL->end(); it++)
+					for (std::list<HalfFaceType*>::iterator it = pL->begin(); it != pL->end(); it++)
 					{
-						CHalfFace * pH = *it;
+						HalfFaceType * pH = *it;
 
 						if (*pH == *pF)
 						{
@@ -812,71 +939,80 @@ namespace MeshLib
 		};
 
 		//construct edges
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_construct_edges()
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_construct_edges()
 		{
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
-				CVertex * pV = *vIter;
-				std::list<CTEdge*> * pL = VertexTEdgeList(pV);
+				VertexType * pV = *vIter;
+				TEArray& vteArr = VertexTEdgeList(pV);
 
-				while (!pL->empty())
+				while (vteArr.size() != 0)
 				{
-					CTEdge * pTE = pL->front();
-					pL->remove(pTE);
-					CEdge * e = new CEdge;
+					TEdgeType * pTE = vteArr.back();
+					vteArr.pop_back();
+
+					EdgeType * e = createEdgeWithIndex();
 					assert(e != NULL);
 
 					int id1 = pTE->key(0);
-					CVertex * v1 = m_map_Vertices[id1];
+					VertexType * v1 = m_map_Vertices[id1];
 					e->SetVertex1(v1);
 
 					int id2 = pTE->key(1);
-					CVertex * v2 = m_map_Vertices[id2];
+					VertexType * v2 = m_map_Vertices[id2];
 					e->SetVertex2(v2);
-
-					m_pEdges.push_back(e);
 
 					e->edges()->push_back(pTE);
 					pTE->SetEdge(e);
 
-					std::list<CTEdge*> tmp_edges;
-					for (std::list<CTEdge*>::iterator it = pL->begin(); it != pL->end(); it++)
+					// find tedges that share the same edge
+					// adding them to the correponding edge, and delete it from the array
+					TEArray tmp_tedges;
+					size_t arrSize = vteArr.size();
+					for (size_t arrIdx =0; arrIdx < arrSize; arrIdx++)
 					{
-						CTEdge * pH = *it;
-
-						if (*pH == *pTE)
+						TEPtr pTEMatch = vteArr[arrIdx];
+						if (*pTEMatch == *pTE)
 						{
-							pH->SetEdge(e);
-							tmp_edges.push_back(pH);
+							pTEMatch->SetEdge(e);
+							tmp_tedges.push_back(pTEMatch);
+
+							e->edges()->push_back(pTEMatch);
+							vteArr.erase(arrIdx);
+							--arrIdx;
+							--arrSize;
+							// if ereasing element at arrIdx we do not increase arrIdx
 						}
+
 					}
 
-					for (std::list<CTEdge*>::iterator it = tmp_edges.begin(); it != tmp_edges.end(); it++)
-					{
-						CTEdge * pH = *it;
-						pL->remove(pH);
-						e->edges()->push_back(pH);
-					}
+					//// adding those 
+
+					//for (std::list<TEdgeType*>::iterator it = tmp_edges.begin(); it != tmp_edges.end(); it++)
+					//{
+					//	TEdgeType * pH = *it;
+					//	pL->remove(pH);
+					//	e->edges()->push_back(pH);
+					//}
 
 				}
 
 			}
 
 
-			for (std::list<CEdge*>::iterator it = m_pEdges.begin(); it != m_pEdges.end(); it++)
+			for (auto it = mEContainer.begin(); it != mEContainer.end(); it++)
 			{
-				CEdge * pE = *it;
-				CVertex * v1 = EdgeVertex1(pE);
-				CVertex * v2 = EdgeVertex2(pE);
+				EdgeType * pE = *it;
+				VertexType * v1 = EdgeVertex1(pE);
+				VertexType * v2 = EdgeVertex2(pE);
 				v1->edges()->push_back(pE);
 				v2->edges()->push_back(pE);
 			}
 		};
 
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_construct_tet(CTet* pT, int tId, int * v)
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_construct_tet(TetType* pT, int tId, int * v)
 		{
 			//set the tet->id
 
@@ -886,11 +1022,11 @@ namespace MeshLib
 
 			for (int k = 0; k < 4; k++)
 			{
-				CTVertex * pTV = new CTVertex();
+				TVertexType * pTV = new TVertexType();
 				pT->setTVertex(pTV, k);
 				pTV->id() = k;
 
-				CVertex * pV = m_map_Vertices[v[k]];
+				VertexType * pV = m_map_Vertices[v[k]];
 				pTV->set_vert(pV);
 				pV->tvertices()->push_back(pTV);
 
@@ -899,10 +1035,10 @@ namespace MeshLib
 
 			//set half faces
 
-			int order[4][3] = { { 1, 2, 3 }, { 2, 0, 3 }, { 0, 1, 3 }, { 1, 0, 2 } };
+			int order[4][3] = { { 1, 2, 3 },{ 2, 0, 3 },{ 0, 1, 3 },{ 1, 0, 2 } };
 
-			CTVertex   * pTV[3];
-			CHalfFace * pHF[4];
+			TVertexType   * pTV[3];
+			HalfFaceType * pHF[4];
 
 			for (int i = 0; i < 4; i++)
 			{
@@ -925,17 +1061,16 @@ namespace MeshLib
 
 			for (int i = 0; i < 3; i++)
 			{
-				CHalfEdge * pH0 = HalfFaceHalfEdge(pHF[i]);
+				HalfEdgeType * pH0 = HalfFaceHalfEdge(pHF[i]);
 				pH0 = HalfEdgeNext(pH0);
-				CHalfEdge * pH1 = HalfFaceHalfEdge(pHF[(i + 1) % 3]);
+				HalfEdgeType * pH1 = HalfFaceHalfEdge(pHF[(i + 1) % 3]);
 				pH1 = HalfEdgePrev(pH1);
 
 				pH0->SetDual(pH1);
 				pH1->SetDual(pH0);
 
-				CTEdge * pTE = new CTEdge;
+				TEdgeType * pTE = createTEdgeWithIndex();
 				assert(pTE != NULL);
-				m_pTEdges.push_back(pTE);
 				pTE->SetTet(pT);
 				pH0->SetTEdge(pTE);
 				pH1->SetTEdge(pTE);
@@ -954,21 +1089,19 @@ namespace MeshLib
 				pTE->key(0) = pTE->left()->source()->id();
 				pTE->key(1) = pTE->left()->target()->id();
 
-				CVertex * v = m_map_Vertices[pTE->key(0)];
-				v->tedges()->push_back(pTE);
+				VertexType * v = m_map_Vertices[pTE->key(0)];
+				VertexTEdgeList(v).push_back(pTE);
 			}
 
-			CHalfEdge * pH0 = HalfFaceHalfEdge(pHF[3]);
+			HalfEdgeType * pH0 = HalfFaceHalfEdge(pHF[3]);
 			for (int i = 0; i < 3; i++)
 			{
-				CHalfEdge * pH1 = HalfFaceHalfEdge(pHF[2 - i]);
+				HalfEdgeType * pH1 = HalfFaceHalfEdge(pHF[2 - i]);
 				pH0->SetDual(pH1);
 				pH1->SetDual(pH0);
 
-				CTEdge * pTE = new CTEdge;
+				TEdgeType * pTE = createTEdgeWithIndex();
 				assert(pTE != NULL);
-				//save TEdges to the TEdge list
-				m_pTEdges.push_back(pTE);
 				//set TEdge->Tet
 				pTE->SetTet(pT);
 				//set HalfEdge->TEdge
@@ -988,8 +1121,138 @@ namespace MeshLib
 				pTE->key(0) = pTE->left()->source()->id();
 				pTE->key(1) = pTE->left()->target()->id();
 
-				CVertex * v = m_map_Vertices[pTE->key(0)];
-				v->tedges()->push_back(pTE);
+				VertexType * v = m_map_Vertices[pTE->key(0)];
+				VertexTEdgeList(v).push_back(pTE);
+
+				pH0 = HalfEdgeNext(pH0);
+			}
+		};
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_construct_tet_orientation(TetType* pT, int tId, int  v[4])
+		{
+			//orient the tet 
+			CPoint A = m_map_Vertices[v[0]]->position();
+			CPoint B = m_map_Vertices[v[1]]->position();
+			CPoint C = m_map_Vertices[v[2]]->position();
+			CPoint D = m_map_Vertices[v[3]]->position();
+			CPoint AB = B - A;
+			CPoint AC = C - A;
+			CPoint AD = D - A;
+
+			double orientation_product = AB * (AC ^ AD);
+			if (orientation_product < 0) {
+				int temp = v[2];
+				v[2] = v[3];
+				v[3] = temp;
+			}
+			//set the tet->id
+
+			pT->id() = tId;
+
+			//set TVertices of the Tet
+
+			for (int k = 0; k < 4; k++)
+			{
+				TVertexType * pTV = new TVertexType();
+				pT->setTVertex(pTV, k);
+				pTV->id() = k;
+
+				VertexType * pV = m_map_Vertices[v[k]];
+				pTV->set_vert(pV);
+				pV->tvertices()->push_back(pTV);
+
+				pTV->set_tet(pT);
+			}
+
+			//set half faces
+
+			int order[4][3] = { { 1, 2, 3 }, { 2, 0, 3 }, { 0, 1, 3 }, { 1, 0, 2 } };
+
+			TVertexType   * pTV[3];
+			HalfFaceType * pHF[4];
+
+			for (int i = 0; i < 4; i++)
+			{
+				for (int k = 0; k < 3; k++)
+				{
+					pTV[k] = TetTVertex(pT, order[i][k]);
+				}
+				pT->setHalfFace(_construct_half_face(pTV), i);
+				pHF[i] = TetHalfFace(pT, i);
+			}
+
+			// connect the four half faces
+
+			for (int i = 0; i < 4; i++)
+			{
+				pHF[i]->SetTet(pT);
+			}
+
+			//Seting the dual half edges
+
+			for (int i = 0; i < 3; i++)
+			{
+				HalfEdgeType * pH0 = HalfFaceHalfEdge(pHF[i]);
+				pH0 = HalfEdgeNext(pH0);
+				HalfEdgeType * pH1 = HalfFaceHalfEdge(pHF[(i + 1) % 3]);
+				pH1 = HalfEdgePrev(pH1);
+
+				pH0->SetDual(pH1);
+				pH1->SetDual(pH0);
+
+				TEdgeType * pTE = createTEdgeWithIndex();
+				pTE->SetTet(pT);
+				pH0->SetTEdge(pTE);
+				pH1->SetTEdge(pTE);
+
+				if (pH0->source()->id() < pH0->target()->id())
+				{
+					pTE->SetLeft(pH0);
+					pTE->SetRight(pH1);
+				}
+				else
+				{
+					pTE->SetLeft(pH1);
+					pTE->SetRight(pH0);
+				}
+
+				pTE->key(0) = pTE->left()->source()->id();
+				pTE->key(1) = pTE->left()->target()->id();
+
+				VertexType * v = m_map_Vertices[pTE->key(0)];
+				VertexTEdgeList(v).push_back(pTE);
+			}
+
+			HalfEdgeType * pH0 = HalfFaceHalfEdge(pHF[3]);
+			for (int i = 0; i < 3; i++)
+			{
+				HalfEdgeType * pH1 = HalfFaceHalfEdge(pHF[2 - i]);
+				pH0->SetDual(pH1);
+				pH1->SetDual(pH0);
+
+				TEdgeType * pTE = createTEdgeWithIndex();
+				//set TEdge->Tet
+				pTE->SetTet(pT);
+				//set HalfEdge->TEdge
+				pH0->SetTEdge(pTE);
+				pH1->SetTEdge(pTE);
+
+				if (pH0->source()->id() < pH0->target()->id())
+				{
+					pTE->SetLeft(pH0);
+					pTE->SetRight(pH1);
+				}
+				else
+				{
+					pTE->SetLeft(pH1);
+					pTE->SetRight(pH0);
+				}
+				pTE->key(0) = pTE->left()->source()->id();
+				pTE->key(1) = pTE->left()->target()->id();
+
+				VertexType * v = m_map_Vertices[pTE->key(0)];
+				VertexTEdgeList(v).push_back(pTE);
 
 				pH0 = HalfEdgeNext(pH0);
 			}
@@ -997,8 +1260,8 @@ namespace MeshLib
 
 		//write tet mesh to the file
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_write(const char * output)
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_write(const char * output)
 		{
 
 			std::fstream _os(output, std::fstream::out);
@@ -1010,9 +1273,9 @@ namespace MeshLib
 			_os << m_nVertices << " vertices" << std::endl;
 			_os << m_nTets << " tets" << std::endl;
 
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
-				CVertex * pV = *vIter;
+				VertexType * pV = *vIter;
 				CPoint  p = pV->position();
 				for (int k = 0; k < 3; k++)
 				{
@@ -1027,7 +1290,7 @@ namespace MeshLib
 
 			for (int i = 0; i < m_nTets; i++)
 			{
-				CTet * pt = m_map_Tets[i];
+				TetType * pt = m_map_Tets[i];
 				_os << 4;
 				for (int k = 0; k < 4; k++)
 				{
@@ -1040,9 +1303,9 @@ namespace MeshLib
 				_os << std::endl;
 			}
 
-			for (std::list<CEdge*>::iterator eIter = m_pEdges.begin(); eIter != m_pEdges.end(); eIter++)
+			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
 			{
-				CEdge * pE = *eIter;
+				EdgeType * pE = *eIter;
 				if (pE->string().size() > 0)
 				{
 					_os << "Edge " << EdgeVertex1(pE)->id() << " " << EdgeVertex2(pE)->id() << " ";
@@ -1053,25 +1316,25 @@ namespace MeshLib
 			_os.close();
 		};
 
-		template<typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		void CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::_write_t(const char * output)
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_write_t(const char * output, bool highPrecision)
 		{
 			//write traits to string, add by Wei Chen, 11/23/2015
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
-				CVertex * pV = *vIter;
+				VertexType * pV = *vIter;
 				pV->_to_string();
 			}
 
-			for (std::list<CTet *>::iterator tIter = m_pTets.begin(); tIter != m_pTets.end(); tIter++)
+			for (auto tIter = mTContainer.begin(); tIter != mTContainer.end(); tIter++)
 			{
-				CTet * pT = *tIter;
+				TetType * pT = *tIter;
 				pT->_to_string();
 			}
 
-			for (std::list<CEdge*>::iterator eIter = m_pEdges.begin(); eIter != m_pEdges.end(); eIter++)
+			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
 			{
-				CEdge * pE = *eIter;
+				EdgeType * pE = *eIter;
 				pE->_to_string();
 			}
 			//write traits end
@@ -1083,14 +1346,23 @@ namespace MeshLib
 				return;
 			}
 
-			for (std::list<CVertex*>::iterator vIter = m_pVertices.begin(); vIter != m_pVertices.end(); vIter++)
+			if (highPrecision) {
+				_os << std::setiosflags(std::ios::fixed);
+			}
+
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
-				CVertex * pV = *vIter;
+				VertexType * pV = *vIter;
 				CPoint p = pV->position();
 				_os << "Vertex " << pV->id();
 				for (int k = 0; k < 3; k++)
 				{
-					_os << " " << p[k];
+					if (highPrecision) {
+						_os << " " << std::setprecision(16) << p[k];
+					}
+					else {
+						_os << " " << p[k];
+					}
 				}
 				if (pV->string().size() > 0)
 				{
@@ -1099,9 +1371,9 @@ namespace MeshLib
 				_os << std::endl;
 			}
 
-			for (std::list<CTet *>::iterator tIter = m_pTets.begin(); tIter != m_pTets.end(); tIter++)
+			for (auto tIter = mTContainer.begin(); tIter != mTContainer.end(); tIter++)
 			{
-				CTet * pT = *tIter;
+				TetType * pT = *tIter;
 				_os << "Tet " << pT->id();
 				for (int k = 0; k < 4; k++)
 				{
@@ -1114,9 +1386,9 @@ namespace MeshLib
 				_os << std::endl;
 			}
 
-			for (std::list<CEdge*>::iterator eIter = m_pEdges.begin(); eIter != m_pEdges.end(); eIter++)
+			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
 			{
-				CEdge * pE = *eIter;
+				EdgeType * pE = *eIter;
 				if (pE->string().size() > 0)
 				{
 					_os << "Edge " << EdgeVertex1(pE)->id() << " " << EdgeVertex2(pE)->id() << " ";
@@ -1127,63 +1399,198 @@ namespace MeshLib
 			_os.close();
 		}
 
-		/*------------------------------------------------------------------------------------------------
-			Access TVertex data members
-			--------------------------------------------------------------------------------------------------*/
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TVertexVertex(CTVertex * pTVertex)
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_write_vtk(const char* filename, bool highPrecision)
 		{
-			return (CVertex*)pTVertex->vert();
-		};
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTet * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TVertexTet(CTVertex * pTVertex)
-		{
-			return (CTet*)pTVertex->tet();
-		};
+			reinitializeVIds();
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TVertexHalfEdge(CTVertex * pTVertex)
-		{
-			return (CHalfEdge*)pTVertex->halfedge();
-		};
-		/*------------------------------------------------------------------------------------------------
-			Access Vertex data members
-			--------------------------------------------------------------------------------------------------*/
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline std::list<CEdge*> * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::VertexEdgeList(CVertex * pVertex)
-		{
-			return (std::list<CEdge*>*) pVertex->edges();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline std::list<CTEdge*> * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::VertexTEdgeList(CVertex * pVertex)
-		{
-			return (std::list<CTEdge*>*) pVertex->tedges();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline std::list<CHalfFace*> * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::VertexHalfFaceList(CVertex * pVertex)
-		{
-			return (std::list<CHalfFace*>*) pVertex->HalfFaces();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline std::list<CTVertex*> * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::VertexTVertexList(CVertex * pVertex)
-		{
-			return (std::list<CTVertex*>*) pVertex->tvertices();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::VertexEdge(CVertex * v1, CVertex * v2)
-		{
-			std::list<CEdge*> * vEdgeList = VertexEdgeList(v1);
-
-			for (std::list<CEdge*>::iterator titer = (*vEdgeList).begin(); titer != (*vEdgeList).end(); titer++)
+			std::fstream _os(filename, std::fstream::out);
+			if (_os.fail())
 			{
-				CEdge * pE = *titer;
+				fprintf(stderr, "Error while opening file %s\n", filename);
+				return;
+			}
 
-				CVertex * w1 = EdgeVertex1(pE);
-				CVertex * w2 = EdgeVertex2(pE);
+			if (highPrecision) {
+				_os << std::setiosflags(std::ios::fixed);
+			}
+
+			_os << "# vtk DataFile Version 2.0\n";
+			_os << "Unstructured Grid\n";
+			_os << "ASCII\n";
+			_os << "DATASET UNSTRUCTURED_GRID\n";
+			_os << "POINTS " << mVContainer.size() << " double\n";
+
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
+			{
+				VertexType* pV = *vIter;
+				CPoint p = pV->position();
+				for (int k = 0; k < 3; k++)
+				{
+					if (highPrecision) {
+						_os << " " << std::setprecision(16) << p[k];
+					}
+					else {
+						_os << " " << p[k];
+					}
+				}
+
+				_os << std::endl;
+			}
+			_os << "\n";
+
+			_os << "CELLS " << mTContainer.size() << ' ' << mTContainer.size()*5 << '\n';
+
+
+			for (auto tIter = mTContainer.begin(); tIter != mTContainer.end(); tIter++)
+			{
+				TetType* pT = *tIter;
+				_os << "4 ";
+				for (int k = 0; k < 4; k++)
+				{
+					_os << " " << pT->tvertex(k)->vert()->id();
+				}
+				_os << std::endl;
+			}
+			_os << "\n";
+
+			_os << "CELL_TYPES " << mTContainer.size()  << '\n';
+			for (auto tIter = mTContainer.begin(); tIter != mTContainer.end(); tIter++)
+			{
+				_os << "10\n";
+			}
+
+			_os.close();
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_write_tet_list_to_vtk(const char* filename, std::vector<TPtr> tets, bool highPrecision)
+		{
+			VPropHandle<int> vNewIdsHdl;
+			addVProp(vNewIdsHdl);
+
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
+			{
+				VertexType* pV = *vIter;
+				gVP(vNewIdsHdl, pV) = -1;
+			}
+
+			int currentVIds = 0;
+			std::vector<VPtr> appearingVerts;
+			for (auto tIter = tets.begin(); tIter != tets.end(); tIter++)
+			{
+				TPtr pT = *tIter;
+				for (int k = 0; k < 4; k++)
+				{
+					VPtr pV = pT->tvertex(k)->vert();
+
+					int & vId = gVP(vNewIdsHdl, pV);
+					if (vId == -1) {
+						vId = currentVIds;
+						++currentVIds;
+						appearingVerts.push_back(pV);
+					}
+
+				}
+			}
+
+			std::fstream _os(filename, std::fstream::out);
+			if (_os.fail())
+			{
+				fprintf(stderr, "Error while opening file %s\n", filename);
+				return;
+			}
+
+			if (highPrecision) {
+				_os << std::setiosflags(std::ios::fixed);
+			}
+
+			_os << "# vtk DataFile Version 2.0\n";
+			_os << "Unstructured Grid\n";
+			_os << "ASCII\n";
+			_os << "DATASET UNSTRUCTURED_GRID\n";
+			_os << "POINTS " << appearingVerts.size() << " double\n";
+
+			for (auto vIter = appearingVerts.begin(); vIter != appearingVerts.end(); vIter++)
+			{
+				VertexType* pV = *vIter;
+				CPoint p = pV->position();
+				for (int k = 0; k < 3; k++)
+				{
+					if (highPrecision) {
+						_os << " " << std::setprecision(16) << p[k];
+					}
+					else {
+						_os << " " << p[k];
+					}
+				}
+
+				_os << std::endl;
+			}
+			_os << "\n";
+
+			_os << "CELLS " << tets.size() << ' ' << tets.size() * 5 << '\n';
+
+
+			for (auto tIter = tets.begin(); tIter != tets.end(); tIter++)
+			{
+				TetType* pT = *tIter;
+				_os << "4 ";
+				for (int k = 0; k < 4; k++)
+				{
+					_os << " " << gVP(vNewIdsHdl, pT->tvertex(k)->vert());
+				}
+				_os << std::endl;
+			}
+			_os << "\n";
+
+			_os << "CELL_TYPES " << tets.size() << '\n';
+			for (auto tIter = tets.begin(); tIter != tets.end(); tIter++)
+			{
+				_os << "10\n";
+			}
+
+			_os.close();
+		}
+
+		/*------------------------------------------------------------------------------------------------
+		Access Vertex data members
+		--------------------------------------------------------------------------------------------------*/
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline std::list<EdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdgeList(VertexType* pVertex)
+		{
+			return (std::list<EdgeType*>*) pVertex->edges();
+		};
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline CPArray<TEdgeType*, TMESH_ARRAY_PRE_ALLOC_SIZE> & CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexTEdgeList(VertexType* pVertex)
+		{
+			return gVP(mVTEArrayHandle, pVertex);
+		};
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline std::list<HalfFaceType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexHalfFaceList(VertexType* pVertex)
+		{
+			return (std::list<HalfFaceType*>*) pVertex->HalfFaces();
+		};
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline std::list<TVertexType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexTVertexList(VertexType* pVertex)
+		{
+			return (std::list<TVertexType*>*) pVertex->tvertices();
+		};
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline EdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdge(VertexType* v1, VertexType* v2)
+		{
+			std::list<EdgeType*>* vEdgeList = VertexEdgeList(v1);
+
+			for (std::list<EdgeType*>::iterator titer = (*vEdgeList).begin(); titer != (*vEdgeList).end(); titer++)
+			{
+				EdgeType* pE = *titer;
+
+				VertexType* w1 = EdgeVertex1(pE);
+				VertexType* w2 = EdgeVertex2(pE);
 
 				if (w1 == v1 && w2 == v2)
 				{
@@ -1194,189 +1601,459 @@ namespace MeshLib
 					return pE;
 				}
 			}
-
 			return NULL;
-		};
-
-		/*------------------------------------------------------------------------------------------------
-			Access TEdge data members
-			--------------------------------------------------------------------------------------------------*/
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TEdgeLeftHalfEdge(CTEdge * pTEdge)
-		{
-			return (CHalfEdge*)pTEdge->left();
-		};
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TEdgeRightHalfEdge(CTEdge * pTEdge)
-		{
-			return (CHalfEdge*)pTEdge->right();
-		};
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TEdgeEdge(CTEdge * pTEdge)
-		{
-			return (CEdge*)pTEdge->edge();
-		};
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TEdgeDualTEdge(CTEdge * pTEdge)
-		{
-			return (CTEdge*)pTEdge->dual();
-		};
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTet * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TEdgeTet(CTEdge * pTEdge)
-		{
-			return (CTet*)pTEdge->tet();
-		};
-
-		/*------------------------------------------------------------------------------------------------
-			Access HalfEdge data members
-			--------------------------------------------------------------------------------------------------*/
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeSource(CHalfEdge * pHalfEdge)
-		{
-			return (CVertex*)pHalfEdge->source();
-		}
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeTarget(CHalfEdge * pHalfEdge)
-		{
-			return (CVertex*)pHalfEdge->target();
-		}
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeTSource(CHalfEdge * pHalfEdge)
-		{
-			return (CTVertex*)pHalfEdge->tSource();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeTTarget(CHalfEdge * pHalfEdge)
-		{
-			return (CTVertex*)pHalfEdge->tTarget();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeDual(CHalfEdge * pHalfEdge)
-		{
-			return (CHalfEdge*)pHalfEdge->dual();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeNext(CHalfEdge * pHalfEdge)
-		{
-			return (CHalfEdge*)pHalfEdge->next();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgePrev(CHalfEdge * pHalfEdge)
-		{
-			return (CHalfEdge*)pHalfEdge->prev();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeTEdge(CHalfEdge * pHalfEdge)
-		{
-			return (CTEdge*)pHalfEdge->tedge();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfFace * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfEdgeHalfFace(CHalfEdge * pHalfEdge)
-		{
-			return (CHalfFace*)pHalfEdge->half_face();
 		}
 		/*------------------------------------------------------------------------------------------------
-			Access Edge data members
-			--------------------------------------------------------------------------------------------------*/
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline std::list<CTEdge*> * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::EdgeTEdgeList(CEdge * pEdge)
+		Access TVertex data members
+		--------------------------------------------------------------------------------------------------*/
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TVertexVertex(TVertexType* pTVertex)
 		{
-			return (std::list<CTEdge*>*) pEdge->edges();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::EdgeVertex1(CEdge * pEdge)
+			return (VertexType*)pTVertex->vert();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TetType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TVertexTet(TVertexType* pTVertex)
 		{
-			return (CVertex*)pEdge->vertex1();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline double CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::EdgeLength(CEdge * pEdge)
+			return (TetType*)pTVertex->tet();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TVertexHalfEdge(TVertexType* pTVertex)
 		{
-			CVertex * pV1 = EdgeVertex1(pEdge);
-			CVertex * pV2 = EdgeVertex2(pEdge);
+			return (HalfEdgeType*)pTVertex->halfedge();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TVertexOppositeHalfFace(TVertexType* pTVertex)
+		{
+			return (HalfFaceType*)pTVertex->halfedge()->next()->dual()->half_face();
+		}
+		/*------------------------------------------------------------------------------------------------
+		Access TEdge data members
+		--------------------------------------------------------------------------------------------------*/
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TEdgeLeftHalfEdge(TEdgeType* pTEdge)
+		{
+			return (HalfEdgeType*)pTEdge->left();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TEdgeRightHalfEdge(TEdgeType* pTEdge)
+		{
+			return (HalfEdgeType*)pTEdge->right();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline EdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TEdgeEdge(TEdgeType* pTEdge)
+		{
+			return (EdgeType*)pTEdge->edge();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TEdgeDualTEdge(TEdgeType* pTEdge)
+		{
+			return (TEdgeType*)pTEdge->dual();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TetType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TEdgeTet(TEdgeType* pTEdge)
+		{
+			return (TetType*)pTEdge->tet();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TEdgeLeftHalfFace(TEdgeType* pTEdge)
+		{
+			return HalfEdgeHalfFace(TEdgeLeftHalfEdge(pTEdge));
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TEdgeRightHalfFace(TEdgeType* pTEdge)
+		{
+			return HalfEdgeHalfFace(TEdgeRightHalfEdge(pTEdge));
+		}
+
+		/*------------------------------------------------------------------------------------------------
+		Access HalfEdge data members
+		--------------------------------------------------------------------------------------------------*/
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeSource(HalfEdgeType* pHalfEdge)
+		{
+			return (VertexType*)pHalfEdge->source();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeTarget(HalfEdgeType* pHalfEdge)
+		{
+			return (VertexType*)pHalfEdge->target();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TVertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeTSource(HalfEdgeType* pHalfEdge)
+		{
+			return (TVertexType*)pHalfEdge->tSource();
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TVertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeTTarget(HalfEdgeType* pHalfEdge)
+		{
+			return (TVertexType*)pHalfEdge->tTarget();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TetType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeTet(HalfEdgeType* pHalfEdge)
+		{
+			return (TetType*)HalfEdgeTTarget(pHalfEdge)->tet();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeDual(HalfEdgeType* pHalfEdge)
+		{
+			return (HalfEdgeType*)pHalfEdge->dual();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeNext(HalfEdgeType* pHalfEdge)
+		{
+			return (HalfEdgeType*)pHalfEdge->next();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgePrev(HalfEdgeType* pHalfEdge)
+		{
+			return (HalfEdgeType*)pHalfEdge->prev();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline EdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeEdge(HalfEdgeType* pHalfEdge)
+		{
+			return (EdgeType*)pHalfEdge->tedge()->edge();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeTEdge(HalfEdgeType* pHalfEdge)
+		{
+			return (TEdgeType*)pHalfEdge->tedge();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeHalfFace(HalfEdgeType* pHalfEdge)
+		{
+			return (HalfFaceType*)pHalfEdge->half_face();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline CPoint CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfEdgeVec(HalfEdgeType* pHalfEdge)
+		{
+			return HalfEdgeTarget(pHalfEdge)->position() - HalfEdgeSource(pHalfEdge)->position();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline std::list<TEdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeTEdgeList(EdgeType* pEdge)
+		{
+			return (std::list<TEdgeType*>*) pEdge->edges();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeVertex1(EdgeType* pEdge)
+		{
+			return (VertexType*)pEdge->vertex1();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeVertex2(EdgeType* pEdge)
+		{
+			return (VertexType*)pEdge->vertex2();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline double CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeLength(EdgeType* pEdge)
+		{
+			VertexType* pV1 = EdgeVertex1(pEdge);
+			VertexType* pV2 = EdgeVertex2(pEdge);
 
 			return (pV1->position() - pV2->position()).norm();
 		}
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::EdgeVertex2(CEdge * pEdge)
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline double CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeLengthSquare(EdgeType* pEdge)
 		{
-			return (CVertex*)pEdge->vertex2();
+			return (EdgeVertex1(pEdge)->position() - EdgeVertex2(pEdge)->position()).norm2();
 		}
-		/*------------------------------------------------------------------------------------------------
-			Access HalfFace data members
-			--------------------------------------------------------------------------------------------------*/
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfEdge * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfFaceHalfEdge(CHalfFace * pHalfFace)
-		{
-			return (CHalfEdge*)pHalfFace->half_edge();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CFace * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfFaceFace(CHalfFace * pHalfFace)
-		{
-			return (CFace*)pHalfFace->face();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTet * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfFaceTet(CHalfFace * pHalfFace)
-		{
-			return (CTet*)pHalfFace->tet();
-		};
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfFace * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::HalfFaceDual(CHalfFace * pHalfFace)
-		{
-			return (CHalfFace*)pHalfFace->dual();
-		};
 
 		/*------------------------------------------------------------------------------------------------
-			Access Face data members
-			--------------------------------------------------------------------------------------------------*/
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfFace * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::FaceLeftHalfFace(CFace * pFace)
+		Access HalfFace data members
+		--------------------------------------------------------------------------------------------------*/
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFaceHalfEdge(HalfFaceType* pHalfFace)
 		{
-			return (CHalfFace*)pFace->left();
-		};
+			return (HalfEdgeType*)pHalfFace->half_edge();
+		}
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfFace * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::FaceRightHalfFace(CFace * pFace)
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline FaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFaceFace(HalfFaceType* pHalfFace)
 		{
-			return (CHalfFace*)pFace->right();
-		};
+			return (FaceType*)pHalfFace->face();
+		}
 
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TetType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFaceTet(HalfFaceType* pHalfFace)
+		{
+			return (TetType*)pHalfFace->tet();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFaceDual(HalfFaceType* pHalfFace)
+		{
+			return (HalfFaceType*)pHalfFace->dual();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TVertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFaceOppositeTVertex(HalfFaceType* pHalfFace)
+		{
+			HalfEdgeType* pHE = HalfFaceHalfEdge(pHalfFace);
+			HalfEdgeType* pHEDualNext = HalfEdgeNext(HalfEdgeDual(pHE));
+
+			return HalfEdgeTTarget(pHEDualNext);
+		}
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFace3Points(HalfFaceType* pHF, CPoint* v)
+		{
+			HalfEdgeType* pHE = HalfFaceHalfEdge(pHF);
+			v[0] = HalfEdgeSource(pHE)->position();
+			v[1] = HalfEdgeTarget(pHE)->position();
+			v[2] = HalfEdgeTarget(HalfEdgeNext(pHE))->position();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline CPoint CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFaceNormal(HalfFaceType* pHF)
+		{
+			HalfEdgeType* pHE1 = HalfFaceHalfEdge(pHF);;
+			HalfEdgeType* pHE2 = HalfEdgeNext(pHE1);;
+
+			CPoint v1 = HalfEdgeVec(pHE1);
+			CPoint v2 = HalfEdgeVec(pHE2);
+			CPoint n = v1 ^ v2;
+			n /= n.norm();
+
+			return n;
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline CPoint CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::HalfFaceOrientedArea(HalfFaceType* pHF)
+		{
+			HalfEdgeType* pHE1 = HalfFaceHalfEdge(pHF);;
+			HalfEdgeType* pHE2 = HalfEdgeNext(pHE1);;
+
+			CPoint v1 = HalfEdgeVec(pHE1);
+			CPoint v2 = HalfEdgeVec(pHE2);
+			CPoint n = v1 ^ v2;
+
+			return n;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline bool CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::PointInTet(TPtr pT, const CPoint& p)
+		{
+	
+			for (int iHF = 0; iHF < 4; iHF++) {
+				HalfFaceType* pHF = TetHalfFace(pT, iHF);
+				HalfEdgeType* pHE = HalfFaceHalfEdge(pHF);
+				CPoint halfFacePt = HalfEdgeSource(pHE)->position();
+				
+				CPoint normalD = HalfFaceOrientedArea(pHF);
+				double orientedVolume = (p - halfFacePt) * normalD;
+				if (orientedVolume > 0) {
+					return false;
+				}
+			}
+			return true;
+		}
 
 		/*------------------------------------------------------------------------------------------------
-			Access Tetrahedron data members
-			--------------------------------------------------------------------------------------------------*/
-
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CHalfFace * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TetHalfFace(CTet * pT, int j)
+		Access Face data members
+		--------------------------------------------------------------------------------------------------*/
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::FaceLeftHalfFace(FaceType* pFace)
 		{
-			return (CHalfFace*)pT->half_face(j);
-		};
+			return (HalfFaceType*)pFace->left();
+		}
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CTVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TetTVertex(CTet * pT, int j)
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::FaceRightHalfFace(FaceType* pFace)
 		{
-			return (CTVertex*)pT->tvertex(j);
-		};
+			return (HalfFaceType*)pFace->right();
+		}
 
-		template <typename CTVertex, typename CVertex, typename CHalfEdge, typename CTEdge, typename CEdge, typename CHalfFace, typename CFace, typename CTet>
-		inline CVertex * CTMesh<CTVertex, CVertex, CHalfEdge, CTEdge, CEdge, CHalfFace, CFace, CTet>::TetVertex(CTet * pT, int j)
+		/*------------------------------------------------------------------------------------------------
+		Access Tetrahedron data members
+		--------------------------------------------------------------------------------------------------*/
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TetHalfFace(TetType* pT, int j)
 		{
-			return (CVertex*)pT->tvertex(j)->vert();
-		};
+			return (HalfFaceType*)pT->half_face(j);
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TVertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TetTVertex(TetType* pT, int j)
+		{
+			return (TVertexType*)pT->tvertex(j);
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TetVertex(TetType* pT, int j)
+		{
+			return (VertexType*)pT->tvertex(j)->vert();
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline double CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TetOrientedVolume(TetType* pT)
+		{
+			CPoint A = pT->vertex(0)->position();
+			CPoint B = pT->vertex(1)->position();
+			CPoint C = pT->vertex(2)->position();
+			CPoint D = pT->vertex(3)->position();
+			CPoint AB = B - A;
+			CPoint AC = C - A;
+			CPoint AD = D - A;
+
+			double orientation_product = AB * (AC ^ AD);
+			return orientation_product;;
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline CPoint CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TetCentroid(TetType* pT)
+		{
+			CPoint centroid;
+			for (int i = 0; i < 4; ++i) {
+				centroid += TetVertex(pT, i)->position();
+			}
+			centroid /= 4;
+			return centroid;
+		}
+
+		//Operations of new a object
+		/*! New a vertex in tmesh */
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::newVertex()
+		{
+			size_t index;
+			VertexType* pV = mVContainer.newMember(index);
+			assert(pV != NULL);
+
+			//for (int i = 0; i < mVProps.size(); i++) {
+			//	BasicPropHandle* pProp = mVProps[i];
+			//	pProp->initializePropMember(index);
+			//}
+			pV->index() = index;
+			return pV;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createVertexWithId(int id)
+		{
+			VertexType* pV;
+			pV = newVertex();
+			m_map_Vertices.insert(VMapPair(id, pV));
+			pV->id() = id;
+			return pV;;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline VertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createVertexWithIndex()
+		{
+			VertexType* pV;
+			pV = newVertex();
+			pV->id() = (int)pV->index();
+			m_map_Vertices.insert(VMapPair(pV->id(), pV));
+			return pV;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline FaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createFace()
+		{
+			size_t index;
+			FaceType* pF = mFContainer.newMember(index);
+			assert(pF != NULL);
+			pF->index() = index;
+
+			return pF;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createHalfFaceWithIndex()
+		{
+			size_t index;
+			HalfFaceType* pHF = mHFContainer.newMember(index);
+			assert(pHF != NULL);
+			pHF->index() = index;
+
+			return pHF;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline HalfEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createHalfEdgeWithIndex()
+		{
+			size_t index;
+			HalfEdgeType* pHE = mHEContainer.newMember(index);
+			assert(pHE != NULL);
+			pHE->index() = index;
+
+			return pHE;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline EdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createEdgeWithIndex()
+		{
+			size_t index;
+			EdgeType* pE = mEContainer.newMember(index);
+			assert(pE != NULL);
+			pE->index() = index;
+
+			return pE;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TEdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createTEdgeWithIndex()
+		{
+			size_t index;
+			TEdgeType* pTE = mTEContainer.newMember(index);
+			assert(pTE != NULL);
+			pTE->index() = index;
+
+			return pTE;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TetType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createTetWithIndex()
+		{
+			size_t index;
+			TetType* pT = mTContainer.newMember(index);
+			assert(pT != NULL);
+			m_map_Tets.insert(TMapPair(index, pT));
+			pT->index() = index;
+
+			return pT;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TetType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createTetWithId(int id)
+		{
+			size_t index;
+			TetType* pT = mTContainer.newMember(index);
+			assert(pT != NULL);
+			m_map_Tets.insert(TMapPair(id, pT));
+			pT->index() = index;
+
+			return pT;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::reinitializeVIds()
+		{
+			int currentId = 0;
+			m_map_Vertices.clear();
+			for (VPtr pV : mVContainer)
+			{
+				m_map_Vertices.insert(VMapPair(currentId, pV));
+				pV->id() = currentId;
+				++currentId;
+			}
+		}
 
 	};
+
+
 };
 #endif _MESHLIB_BASE_TET_MESH_H

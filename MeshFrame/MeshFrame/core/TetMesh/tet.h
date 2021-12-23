@@ -47,7 +47,10 @@ namespace MeshLib
 			virtual void _to_string() { };
 
 			std::string string() { return m_string; };
-
+		public:
+			size_t& index() { return m_index; };
+		private:
+			size_t m_index;
 		protected:
 
 			CHalfFace  * m_pHalfFace[4];

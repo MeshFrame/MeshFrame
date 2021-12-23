@@ -452,7 +452,7 @@ namespace MeshLib
 			/*! iterator ++ */
 			void operator++()
 			{
-				m_pH = m_pMesh->HalfEdgeNext(m_pH);
+				m_pH = m_pMesh->HalfEdgeNext(m_pH); 
 				if (m_pH == m_pMesh->HalfFaceHalfEdge(m_pF))
 				{
 					m_pH = NULL;

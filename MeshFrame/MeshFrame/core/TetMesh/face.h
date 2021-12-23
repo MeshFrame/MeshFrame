@@ -50,12 +50,14 @@ namespace MeshLib
 
 			virtual void _from_string() { };
 			virtual void _to_string() { };
+			size_t& index() { return m_index; };
 
 		protected:
 
 			CHalfFace * m_pLeft;
 			CHalfFace * m_pRight;
 			bool		m_bIsBoundary;
+			size_t         m_index;
 		};
 	};
 };

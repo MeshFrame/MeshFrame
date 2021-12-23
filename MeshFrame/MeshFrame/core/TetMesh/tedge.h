@@ -50,25 +50,30 @@ namespace MeshLib
 
 			bool operator==(const CTEdge & e)
 			{
-				for (int i = 0; i < 2; i++)
-				{
-					if (m_key[i] != e.m_key[i]) return false;
-				}
-				return true;
+				//for (int i = 0; i < 2; i++)
+				//{
+				//	if (m_key[i] != e.m_key[i]) return false;
+				//}
+				//return true;
+
+				return m_key[0] == e.m_key[0] && m_key[1] == e.m_key[1];
 			}
 
 			int & key(int k) { return m_key[k]; };
 
 			virtual void _from_string() { };
 			virtual void _to_string() { };
-
+		public:
+			size_t& index() { return m_index; };
+		private:
+			size_t m_index;
 		protected:
 
 			CHalfEdge    * m_pLeft;
 			CHalfEdge    * m_pRight;
 			CEdge        * m_pEdge;
 			CTet         * m_pTet;
-			int            m_key[2];
+			int            m_key[2]; // The ids of the two vertices on the tdge, sorted thus m_key[0] < m_key[1
 
 		};
 	};

@@ -174,7 +174,7 @@ inline CHalfEdge *  CVertex::most_ccw_in_halfedge()
 	CHalfEdge * he = m_halfedge->ccw_rotate_about_target();
 	CHalfEdge * pStartHE = he;
 	//rotate to the most ccw in halfedge
-	int numHEs = m_outHEs.size();
+	size_t numHEs = m_outHEs.size();
 	int numHEIterated = 0;
 	while( he != NULL )
 	{

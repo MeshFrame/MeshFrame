@@ -20,12 +20,12 @@
 		
 #define LOAD_UV \
 	if (strcmp((key), "uv") == 0) { \
-		sscanf((val), "(%lf %lf)", &m_uv[0], &m_uv[1]); \
+		SAFE_SSCANF((val), "(%lf %lf)", &m_uv[0], &m_uv[1]); \
 	}
 
 #define WRITE_UV \
 	SAFE_SPRINT(_str,MAX_TRAIT_STRING_SIZE, "uv=(%lf %lf) ", m_uv[0], m_uv[1]); \
-	SAFE_STRCAT(str, _str, MAX_TRAIT_STRING_SIZE);
+	SAFE_STRCAT(str, _str);
 
 #define HAS_FIELD_COLOR \
 	protected: \
@@ -36,12 +36,12 @@
 
 #define LOAD_COLOR \
 	if (strcmp((key), "rgb") == 0) { \
-		sscanf((val), "(%f %f %f)", &(m_color.r), &(m_color.g), &(m_color.b)); \
+		SAFE_SSCANF((val), "(%f %f %f)", &(m_color.r), &(m_color.g), &(m_color.b)); \
 	}
 
 #define WRITE_COLOR \
 	SAFE_SPRINT(_str, MAX_TRAIT_STRING_SIZE, "rgb=(%f %f %f) ", m_color.r, m_color.g, m_color.b); \
-	SAFE_STRCAT(str, _str, MAX_TRAIT_STRING_SIZE);
+	SAFE_STRCAT(str, _str);
 
 #define HAS_FIELD_NORMAL \
 	protected: \
@@ -52,12 +52,12 @@
 
 #define LOAD_NORMAL \
 	if (strcmp((key), "normal") == 0) { \
-		sscanf((val), "(%lf %lf %lf)", &m_normal[0], &m_normal[1], &m_normal[2]); \
+		SAFE_SSCANF((val), "(%lf %lf %lf)", &m_normal[0], &m_normal[1], &m_normal[2]); \
 	}
 
 #define WRITE_NORMAL \
 	SAFE_SPRINT(_str, MAX_TRAIT_STRING_SIZE, "normal=(%lf %lf %lf) ", m_normal[0], m_normal[1], m_normal[2]); \
-	SAFE_STRCAT(str, _str, MAX_TRAIT_STRING_SIZE);
+	SAFE_STRCAT(str, _str);
 
 namespace MeshLib {
 

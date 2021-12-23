@@ -127,7 +127,7 @@ struct strutil {
 		/*Jump to next token*/
 		int nextToken() {
 			/*Clear token*/
-			SAFE_STRCPY(mToken, "", MAX_TOKEN_STRING_SIZE);
+			SAFE_STRCPY(mToken, "");
 			/*If offset >= string's length, retun StringOver*/
 			if (mOffset >= stringLen) return StringOver;
 			/*Find the start charater of the next token*/
@@ -164,7 +164,7 @@ struct strutil {
 		int nextToken(const char * delimiters, size_t size)
 		{
 			/*Clear token*/
-			SAFE_STRCPY(mToken, "", MAX_TOKEN_STRING_SIZE);
+			SAFE_STRCPY(mToken, "");
 			/*If offset >= string's length, retun StringOver*/
 			if (mOffset >= stringLen) return StringOver;
 			/*Find the start charater of the next token*/
@@ -222,7 +222,7 @@ struct strutil {
 		int findString(const char & startC, const char & endC)
 		{
 			/*Clear token*/
-			SAFE_STRCPY(mToken, "", MAX_TOKEN_STRING_SIZE);
+			SAFE_STRCPY(mToken, "");
 			/*If offset >= string's length, retun StringOver*/
 			if (mOffset >= stringLen) return StringOver;
 			/*Find the first char of the specified string*/
@@ -245,7 +245,7 @@ struct strutil {
 				*it means we can't put '\0' int token[end], return TokenOut*/
 				if (index >= MAX_TOKEN_STRING_SIZE) { return TokenOut; }
 				/*If currentPos >= string's length, retun StringOver*/
-				if (currentPos >= stringLen) { SAFE_STRCPY(mToken, "", MAX_TOKEN_STRING_SIZE); return StringOver; }
+				if (currentPos >= stringLen) { SAFE_STRCPY(mToken, ""); return StringOver; }
 			}
 			mToken[index] = '\0';
 			return Success;
@@ -259,7 +259,7 @@ struct strutil {
 		int findString(const char & startC, const char & endC, const int & position)
 		{
 			/*Clear token*/
-			SAFE_STRCPY(mToken, "", MAX_TOKEN_STRING_SIZE);
+			SAFE_STRCPY(mToken, "");
 			/*If given position isn't a available index, return failure*/
 			if (position < 0 || position >= stringLen) return Failure;
 			/*Find the first char of the specified string*/
@@ -282,7 +282,7 @@ struct strutil {
 				*it means we can't put '\0' int token[end], return TokenOut*/
 				if (index >= MAX_TOKEN_STRING_SIZE) { return TokenOut; }
 				/*If currentPos >= string's length, retun StringOver*/
-				if (currentPos >= stringLen) { SAFE_STRCPY(mToken, "", MAX_TOKEN_STRING_SIZE); return StringOver; }
+				if (currentPos >= stringLen) { SAFE_STRCPY(mToken, ""); return StringOver; }
 			}
 			mToken[index] = '\0';
 			return Success;
@@ -295,7 +295,7 @@ struct strutil {
 		int findString(const char & startC, const char & endC, char * currentString)
 		{
 			/*Clear token*/
-			SAFE_STRCPY(currentString, "", MAX_TOKEN_STRING_SIZE);
+			SAFE_STRCPY(currentString, "");
 			/*If offset >= string's length, retun StringOver*/
 			if (mOffset >= stringLen) return StringOver;
 			/*Find the first char of the specified string*/

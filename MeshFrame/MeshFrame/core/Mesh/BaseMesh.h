@@ -12,7 +12,9 @@
 #define _MESHLIB_BASE_MESH_H_
 
 #ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS 1
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS 
+#endif 
 #endif
 
 #include <math.h>
@@ -104,6 +106,9 @@ namespace MeshLib {
 		\param filename the input .obj file name
 		*/
 		void			read_obj(const char * filename, bool removeIsolatedVertices = true);
+
+		void            readVFList(const std::vector<std::array<double, 3>>* verts, const std::vector<std::array<int, 3>>* faces, const std::vector<int>* vIds=nullptr);
+
 		/*!
 		Write an .obj file.
 		\param output the output .obj file name
@@ -1739,11 +1744,8 @@ namespace MeshLib {
 		int currentId = 0;
 		for (auto pV : mVContainer)
 		{
-			if (pV->halfedge() != NULL) 
-			{
 				pV->id() = currentId;
 				++currentId;
-			}
 		}
 	}
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
@@ -1752,11 +1754,8 @@ namespace MeshLib {
 		int currentId = 0;
 		for (auto pF : mFContainer)
 		{
-			if (pF->halfedge() != NULL)
-			{
 				pF->id() = currentId;
 				++currentId;
-			}
 		}
 	}
 	/*!
@@ -2738,23 +2737,23 @@ namespace MeshLib {
 				SAFE_SPRINT(lineBuf, MAX_LINE_SIZE, "Vertex %d %lf %lf %lf", pV->index() + 1, pV->point()[0], pV->point()[1], pV->point()[2]);
 			}
 
-			SAFE_STRCAT(lineBuf, MAX_LINE_SIZE, " {");
+			SAFE_STRCAT(lineBuf, " {");
 			int strLen0 = strlen(lineBuf);
 			traitBuffer[0] = '\0';
 			pV->_to_string_default(traitBuffer);
 			int strLen = strlen(lineBuf);
 			if (strlen(lineBuf) + strlen(traitBuffer) <= MAX_TRAIT_STRING_SIZE - 2) {
-				SAFE_STRCAT(lineBuf, MAX_TRAIT_STRING_SIZE, traitBuffer);
+				SAFE_STRCAT(lineBuf, traitBuffer);
 			}
 			traitBuffer[0] = '\0';
 			pV->_to_string(traitBuffer);
 			if (strlen(lineBuf) + strlen(traitBuffer) <= MAX_TRAIT_STRING_SIZE - 2) {
-				SAFE_STRCAT(lineBuf, MAX_TRAIT_STRING_SIZE, traitBuffer);
+				SAFE_STRCAT(lineBuf, traitBuffer);
 			}
 			int strLen1 = strlen(lineBuf);
 
 			if (strLen1 - strLen0 > 0) {
-				SAFE_STRCAT(lineBuf, MAX_LINE_SIZE, "}\n");
+				SAFE_STRCAT(lineBuf, "}\n");
 			}
 			else {
 				lineBuf[strLen0 - 2] = '\n';
@@ -2775,6 +2774,81 @@ namespace MeshLib {
 
 
 
+	}
+
+
+	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
+	inline void CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::readVFList(const std::vector<std::array<double, 3>>* verts, const std::vector<std::array<int, 3>>* faces, const std::vector<int>* vIds )
+	{
+
+		for (int iV = 0; iV < verts->size(); iV++)
+		{
+			int id = vIds != nullptr ? (*vIds)[iV] : iV;
+			VertexType* currentVertex = createVertexWithId(id);
+			currentVertex->point()[0] = (*verts)[iV][0];
+			currentVertex->point()[1] = (*verts)[iV][1];
+			currentVertex->point()[2] = (*verts)[iV][2];
+
+		}
+
+		for (int iF = 0; iF < faces->size(); iF++)
+		{
+			VertexType* currentVs[3];
+			/*Assume each face is a triangle*/
+			for (int j = 0; j < 3; j++)
+			{
+				int vId = (*faces)[iF][j];
+				currentVs[j] = mVMap[vId];
+			}
+
+			FaceType* currentFace = createFace(currentVs, iF);
+			mFIdMap.insert(FIdMapPair(iF, currentFace));
+		}
+
+		/*Label boundary edges*/
+		for (int i = 0; i < mEContainer.getCurrentIndex(); ++i)
+		{
+			EdgeType* currentE = mEContainer.getPointer(i);
+			HalfEdgeType* currentHE0 = edgeHalfedge(currentE, 0);
+			HalfEdgeType* currentHE1 = edgeHalfedge(currentE, 1);
+			if (currentHE1 == NULL)
+			{
+				currentHE0->source()->boundary() = true;
+				currentHE0->target()->boundary() = true;
+			}
+		}
+		/*Remove isolated vertex*/
+		std::vector<VertexType*> isolatedVertexs;
+		//#pragma omp parallel for
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
+		{
+			VertexType* currentV = mVContainer.getPointer(i);
+			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
+			{
+				if (currentV->halfedge() != NULL) continue;
+				isolatedVertexs.push_back(currentV);
+			}
+		}
+		for (auto vertex : isolatedVertexs)
+		{
+			VertexType* currentV = vertex;
+			mVContainer.deleteMember(currentV->index());
+		}
+		/*
+		*	Arrange the boundary half_edge of boundary vertices, to make its halfedge
+		*	to be the most ccw in half_edge
+		*/
+		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
+		{
+			VertexType* currentV = mVContainer.getPointer(i);
+			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
+			{
+				if (!currentV->boundary()) continue;
+				HalfEdgeType* currentHE = vertexMostCcwInHalfEdge(currentV);
+				currentV->halfedge() = currentHE;
+			}
+		}
+		mVMap.clear();
 	}
 
 }//name space MeshLib

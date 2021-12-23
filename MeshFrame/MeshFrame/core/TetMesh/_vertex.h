@@ -13,12 +13,12 @@
 
 #include <list>
 #include "../Geometry/Point.h"
-#include "../Memory/Array.h"
 
 namespace MeshLib
 {
 	namespace TMeshLib
 	{
+
 		class CTVertex;
 		class CHalfEdge;
 		class CEdge;
@@ -27,13 +27,7 @@ namespace MeshLib
 		class CFace;
 		class CTet;
 
-		//typedef CPArray<CEdge*, 12> CEArray;
-		//typedef CPArray<CTVertex*, 12> CTVArray;
-
-		typedef std::list<CEdge*> CEArray;
-		typedef std::list<CTVertex*> CTVArray;
-
-		class CVertex
+		class CVertexCore
 		{
 		public:
 			CVertex() { m_iID = 0; m_bIsBoundary = false; };
@@ -41,13 +35,13 @@ namespace MeshLib
 
 			CPoint & position() { return m_vPosition; };
 			int    & id()       { return m_iID; };
-			size_t & index()    { return m_index; };
 			bool   & boundary()	{ return m_bIsBoundary; };
 
-			CEArray * edges() { return &m_pEdges; };
-			CTVArray * tvertices() { return &m_pTVertices; };
-			//std::list<CTEdge*>  * tedges(){ return &m_pTEdges; };
+			std::list<CEdge*>   * edges() { return &m_pEdges; };
+			std::list<CTEdge*>  * tedges(){ return &m_pTEdges; };
+
 			std::list<CHalfFace*>  * HalfFaces(){ return &m_pHFaces; };
+			std::list<CTVertex*> * tvertices() { return &m_pTVertices; };
 
 			std::string&        string(){ return m_string; };
 
@@ -58,14 +52,13 @@ namespace MeshLib
 
 			CPoint m_vPosition;
 			int    m_iID;
-			size_t    m_index;
 			bool   m_bIsBoundary;
 
 			std::list<CHalfFace*>  m_pHFaces;		//temporary HalfFace list, will be empty after loading the whole mesh 
-			//std::list<CTEdge*>     m_pTEdges;		//temporary TEdge list, will be empty after loading the whole mesh
+			std::list<CTEdge*>     m_pTEdges;		//temporary TEdge list, will be empty after loading the whole mesh
 
-			CTVArray   m_pTVertices;	//adjacent TVertecies
-			CEArray      m_pEdges;	    //adjacent Edges;
+			std::list<CTVertex*>   m_pTVertices;	//adjacent TVertecies
+			std::list<CEdge*>      m_pEdges;	    //adjacent Edges;
 
 			std::string m_string;
 		};

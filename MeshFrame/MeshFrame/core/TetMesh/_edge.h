@@ -31,7 +31,7 @@ namespace MeshLib
 		/*!
 		* \brief CEdge, base class for edge
 		*/
-		class CEdge	//Edge among tets
+		class CEdgeCore	//Edge among tets
 		{
 		public:
 
@@ -53,10 +53,7 @@ namespace MeshLib
 			virtual void _to_string() { };
 
 			std::string & string() { return m_string; };
-		public:
-			size_t& index() { return m_index; };
-		private:
-			size_t m_index;
+
 		protected:
 			std::list<CTEdge*> m_lTEdges;
 			CVertex *  m_vertices[2];

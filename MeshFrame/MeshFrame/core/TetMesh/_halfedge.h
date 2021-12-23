@@ -31,7 +31,7 @@ namespace MeshLib
 		/*!
 		* \brief CHalfEdge, base class for Half edge
 		*/
-		class CHalfEdge
+		class CHalfEdgeCore
 		{
 		public:
 			CHalfEdge()
@@ -69,11 +69,6 @@ namespace MeshLib
 
 			virtual void _from_string() { };
 			virtual void _to_string() { };
-
-		public:
-			size_t& index() { return m_index; };
-		private:
-			size_t m_index;
 
 		protected:
 

@@ -123,12 +123,12 @@ namespace MeshLib {
 			return;
 		}
 
-		T & operator[] (int index) {
+		T & operator[] (size_t index) {
 			if (index >= blockSize * memoryBlockPtrVec.size()) {
 				reserve(index + 1);
 			}
-			int blockIndex = index / blockSize;
-			int offSet = index % blockSize;
+			size_t blockIndex = index / blockSize;
+			size_t offSet = index % blockSize;
 			T * pStartMember = memoryBlockPtrVec[blockIndex];
 			return *(pStartMember + offSet);
 		}
@@ -151,7 +151,7 @@ namespace MeshLib {
 	{
 	public:
 		BasicPropHandle() {};
-		int propIdx = -1;
+		size_t propIdx = 0;
 		void * pPropPool = NULL;
 		bool needInitialize() { return toInitialize; };
 		virtual void initializePropMember(void * pP) {};

@@ -3,6 +3,8 @@
 // A container support random access, not thread safe,
 // with default pre allocated memory, in stack
 // "P" in CPArray means pre allocate
+// designed to contain basic numerical types, like int, double, pointer
+// not safe for types that require destructor
 
 template<typename T, int preAllocateSize >
 class CPArray {
@@ -73,7 +75,7 @@ public:
 	}
 
 	void erase(size_t i) {
-		for (size_t j = i; j < mSize - 1; ++j){
+		for (size_t j = i; int(j) < int(mSize) - 1; ++j){
 			pMem[j] = std::move(pMem[j+1]);
 		}
 		--mSize;
@@ -81,7 +83,7 @@ public:
 
 	//erase form index i to i+n-1
 	void eraseN(size_t i, size_t n) {
-		for (size_t j = i; j < mSize - n; ++j) {
+		for (size_t j = i; int(j) < int(mSize) - n; ++j) {
 			pMem[j] = std::move(pMem[j + n]);
 		}
 		mSize -= n;
@@ -126,6 +128,17 @@ public:
 	T* end() {
 		return pMem + mSize;
 	}
+
+	T& front() {
+		return *pMem;
+	}
+	T& back() {
+		return pMem[mSize - 1];
+	}
+	void pop_back() {
+		--mSize;
+	}
+
 
 	size_t size() { return mSize; }
 	size_t capacity() { return mCapacity; }

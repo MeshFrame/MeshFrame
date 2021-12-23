@@ -59,6 +59,10 @@ namespace MeshLib
 				return true;
 			};
 
+		public:
+			size_t& index() { return m_index; };
+		private:
+			size_t m_index;
 
 
 		protected:

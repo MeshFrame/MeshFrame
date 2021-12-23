@@ -14,10 +14,10 @@
 #include <algorithm>
 
 // declaration
-namespace strutil {
+namespace strutilTetMesh {
 
-	std::ostringstream oss;
-	std::istringstream iss;
+	//std::ostringstream oss;
+	//std::istringstream iss;
 
 	inline std::string trimLeft(const std::string& str)
 	{
@@ -79,7 +79,7 @@ namespace strutil {
 	};
 
 
-	inline    std::string toString(const bool& value)
+	inline    std::string toString(const bool& value, std::ostringstream& oss)
 	{
 		oss.clear();
 		oss.str("");
@@ -87,7 +87,7 @@ namespace strutil {
 		return oss.str();
 	};
 
-	template<bool> bool parseString(const std::string& str)
+	template<bool> bool parseString(const std::string& str, std::istringstream& iss)
 	{
 		bool value;
 		iss.clear();
@@ -97,7 +97,7 @@ namespace strutil {
 	};
 
 
-	template<class T> T parseString(const std::string& str) {
+	template<class T> T parseString(const std::string& str, std::istringstream& iss) {
 		T value;
 		iss.clear();
 		iss.str(str);
@@ -105,21 +105,21 @@ namespace strutil {
 		return value;
 	};
 
-	template<class T> T parseHexString(const std::string& str) {		
+	template<class T> T parseHexString(const std::string& str, std::istringstream& iss) {
 		T value;
 		iss.str(str);
 		iss >>std::hex >> value;
 		return value;
 	};
 
-	template<class T> std::string toString(const T& value) {
+	template<class T> std::string toString(const T& value, std::ostringstream& oss) {
 		oss.clear();
 		oss.str("");
 		oss << value;
 		return oss.str();
 	};
 
-	template<class T> std::string toHexString(const T& value, int width) {
+	template<class T> std::string toHexString(const T& value, int width, std::ostringstream& oss) {
 		oss.clear();
 		oss.str("");
 		oss << std::hex;
@@ -130,10 +130,8 @@ namespace strutil {
 		return oss.str();
 	};
 
-}
-
 // Tokenizer class
-namespace strutil {
+
 
 	/*!
 	*	\brief String Tokenizer
@@ -191,10 +189,6 @@ namespace strutil {
 		std::string m_Delimiters;
 	};
 
-};
-
-namespace strutil {
-
 	inline std::vector<std::string> split(const std::string& str, const std::string& delimiters)
 	{
 		std::vector<std::string> ss;
@@ -209,6 +203,7 @@ namespace strutil {
 	};
 
 };
+
 /*
 struct string_token_iterator
 : public std::iterator<std::input_iterator_tag, std::string>

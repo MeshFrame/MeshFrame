@@ -89,9 +89,9 @@ public:
 			mCurrentViter++;
 			mCurrentBlock = (*mCurrentViter);
 		}
+		if (mIndex >= mSize) return *this;
 		while (deleteMask[mIndex])
 		{
-			if (mIndex >= mSize) return *this;
 			mIndex++;
 			mBlockOffset++;
 			if (mBlockOffset >= mBlockSize)
@@ -100,6 +100,7 @@ public:
 				mCurrentViter++;
 				mCurrentBlock = (*mCurrentViter);
 			}
+			if (mIndex >= mSize) return *this;
 		}
 		return *this;
 	}
