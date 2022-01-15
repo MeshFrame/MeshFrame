@@ -118,6 +118,12 @@ namespace MeshLib
 				Load tet mesh from a ".t" file
 				*/
 			void _load_t(const char * input, bool checkOrientation = false);
+
+			/*!
+			Load tet mesh from a ".t" file
+			*/
+			void _load_vtArray(const std::vector<std::array<double, 3>>& verts, const std::vector<std::array<int, 4>>& tetVIds, bool checkOrientation = false);
+
 			/*!
 				Write tet mesh to a file
 				*/
@@ -127,6 +133,7 @@ namespace MeshLib
 			Write tet mesh to a .t file
 			*/
 			void _write_t(const char * filename, bool highPrecision = false);
+
 
 			/*!
 			Write tet mesh to a .vtk file
@@ -166,7 +173,8 @@ namespace MeshLib
 			int maxVertexId() { return m_maxVertexId; };
 
 			/*! Access the array of tets */
-			TContainer & tets() { return mTContainer; };
+			TContainer& tets() { return mTContainer; };
+			const TContainer & tets() const { return mTContainer; };
 
 			/*! access the vertex with ID */
 			VertexType * idVertex(int id) { return m_map_Vertices[id]; };
@@ -833,6 +841,108 @@ namespace MeshLib
 			removeVProp(mVTEArrayHandle);
 
 		};
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_load_vtArray(
+			const std::vector<std::array<double, 3>>& verts, const std::vector<std::array<int, 4>>& tetVIds, bool checkOrientation)
+		{
+			addVProp(mVHFArrayHandle);
+			addVProp(mVTEArrayHandle);
+
+			m_maxVertexId = verts.size()-1;
+
+			m_nVertices = verts.size();
+			m_nTets = tetVIds.size();
+			m_nEdges = 0;
+
+			//read in the vertices
+			for (int i = 0; i < m_nVertices; i++)
+			{
+				int vid = i;
+
+				CPoint p(verts[i][0], verts[i][1], verts[i][2]);
+
+				VertexType* v = createVertexWithId(vid);
+				v->position() = p;
+			}
+
+
+			//read in tets 
+			for (int id = 0; id < m_nTets; id++)
+			{
+				int tid = id;
+				int vIds[4] = { tetVIds[id][0], tetVIds[id][1], tetVIds[id][2], tetVIds[id][3]};
+
+				TetType* pT = createTetWithId(tid);
+
+				if (checkOrientation) {
+					_construct_tet_orientation(pT, tid, vIds);
+				}
+				else {
+					_construct_tet(pT, tid, vIds);
+				}
+
+			}
+
+			_construct_faces();
+			_construct_edges();
+
+			m_nEdges = (int)mEContainer.size();
+
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
+			{
+				VertexType* pV = *vIter;
+				if (pV->id() > m_maxVertexId)
+				{
+					m_maxVertexId = pV->id();
+				}
+			}
+
+			// label the boundary for faces and vertices
+			for (auto fIter = mFContainer.begin(); fIter != mFContainer.end(); ++fIter)
+			{
+				FPtr pF = *fIter;
+				if (this->FaceLeftHalfFace(pF) == NULL || this->FaceRightHalfFace(pF) == NULL)
+				{
+					pF->boundary() = true;
+					HalfFaceType* pH =
+						FaceLeftHalfFace(pF) == NULL ? FaceRightHalfFace(pF) : FaceLeftHalfFace(pF);
+					//added by Anka, mark edge as boundary
+					HalfEdgeType* pHE = (HalfEdgeType*)pH->half_edge();
+
+					for (int i = 0; i < 3; ++i)
+					{
+						EdgeType* pE = HalfEdgeEdge(pHE);
+						int vid = pH->key(i);
+						VertexType* v = idVertex(vid);
+						v->boundary() = true;
+						pE->boundary() = true;
+						pHE = HalfEdgeNext(pHE);
+					}
+				}
+			}
+
+			// read in traits
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
+			{
+				VertexType* pV = *vIter;
+				pV->_from_string();
+			}
+
+			for (auto tIter = mTContainer.begin(); tIter != mTContainer.end(); tIter++)
+			{
+				TetType* pT = *tIter;
+				pT->_from_string();
+			}
+
+			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
+			{
+				EdgeType* pE = *eIter;
+				pE->_from_string();
+			}
+
+			removeVProp(mVTEArrayHandle);
+		}
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 

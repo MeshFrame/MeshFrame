@@ -30,7 +30,8 @@ public:
 	/*Generate a new member of type T and return its pointer, and initialize it with initial value*/
 	T * newMember(size_t & index, const T & initialVal);
 	/*Transform from members index to its pointer*/
-	T * getPointer(const size_t & index);
+	T* getPointer(const size_t& index);
+	const T * getPointer(const size_t & index) const;
 	T & front() {
 		int i = 0;
 		while (deleteMask[i] && i < size()) {
@@ -43,6 +44,9 @@ public:
 	};
 
 	T& operator[] (int i) {
+		return  *getPointer(i);
+	}
+	const T& operator[] (int i) const {
 		return  *getPointer(i);
 	}
 	/*Deleted the memberof corresponding id, return false if it has already been deleted*/
@@ -232,6 +236,17 @@ inline T * MemoryPool<T>::getPointer(const size_t & index)
 	//int offSet = index % blockSize;
 	char * & pStartMember = memoryBlockPtrVec[index / blockSize];
 	T * pT = (T *)(pStartMember + (index % blockSize) * memberTSize);
+	return pT;
+}
+
+template<typename T>
+inline const T* MemoryPool<T>::getPointer(const size_t& index) const
+{
+	assert(index < blockSize* memoryBlockPtrVec.size());
+	//int blockIndex = index / blockSize;
+	//int offSet = index % blockSize;
+	const char* pStartMember = memoryBlockPtrVec[index / blockSize];
+	const T* pT = (const T*)(pStartMember + (index % blockSize) * memberTSize);
 	return pT;
 }
 
