@@ -1956,7 +1956,7 @@ namespace MeshLib
 		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		inline bool CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::PointInTet(TPtr pT, const CPoint& p)
 		{
-	
+			double tetOrientedVol = TetOrientedVolume(pT);
 			for (int iHF = 0; iHF < 4; iHF++) {
 				HalfFaceType* pHF = TetHalfFace(pT, iHF);
 				HalfEdgeType* pHE = HalfFaceHalfEdge(pHF);
@@ -1964,7 +1964,11 @@ namespace MeshLib
 				
 				CPoint normalD = HalfFaceOrientedArea(pHF);
 				double orientedVolume = (p - halfFacePt) * normalD;
-				if (orientedVolume > 0) {
+				if (orientedVolume > 0 && tetOrientedVol > 0) {
+					return false;
+				}
+				else if (orientedVolume < 0 && tetOrientedVol < 0)
+				{
 					return false;
 				}
 			}
