@@ -218,11 +218,11 @@ namespace MeshLib
 				bool reachEnd() { return m_iter == m_pMesh->edges().end(); };
 			protected:
 				/*! Private construction function, only used to generate begin, end and tmp iterator*/
-				TM_EIterator(TMeshPtr pTMesh, typename std::list<EPtr>::iterator iter) : m_pMesh(pTMesh), m_iter(iter) {};
+				TM_EIterator(TMeshPtr pTMesh, MPIterator<EdgeType> iter) : m_pMesh(pTMesh), m_iter(iter) {};
 				/*! pointer to the mesh */
 				TMeshPtr m_pMesh;
 				/*! edge list iterator */
-				typename std::list<EPtr>::iterator m_iter;
+				MPIterator<EdgeType> m_iter;
 			};
 
 			/*!
