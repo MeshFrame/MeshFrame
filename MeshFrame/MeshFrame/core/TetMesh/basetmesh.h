@@ -166,6 +166,9 @@ namespace MeshLib
 			/*! number of tets */
 			int numTets() { return m_nTets; };
 
+			/*! number of edges */
+			int numEdges() { return mEContainer.size(); };
+
 			/*! number of vertices */
 			int numVertices() { return m_nVertices; };
 

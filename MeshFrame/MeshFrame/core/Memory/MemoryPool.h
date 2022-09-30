@@ -59,6 +59,9 @@ public:
 	size_t size() const;
 	/*Return the MemoryPool's one single block's size*/
 	size_t getBlockSize() { return blockSize; };
+
+	// non-copyable
+	MemoryPool(const MemoryPool&) = delete;
 public:
 	/*Return the MemoryPool's cuurent index*/
 	size_t getCurrentIndex();
