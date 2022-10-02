@@ -104,13 +104,13 @@ namespace MeshLib
 
 			protected:
 				/*! Private construction function, only used to generate begin, end and tmp iterator*/
-				V_VIterator(VPtr pV, typename std::list<EPtr>::iterator iter) :m_pV(pV), pEdges(TMeshType::VertexEdgeList(pV)), m_iter(iter) {};
+				V_VIterator(VPtr pV, typename std::vector<EPtr>::iterator iter) :m_pV(pV), pEdges(TMeshType::VertexEdgeList(pV)), m_iter(iter) {};
 				/*! Pointer to the center vertex*/
 				VPtr m_pV;
 				/*! center vertex */
-				std::list<EPtr> * pEdges;
+				std::vector<EPtr> * pEdges;
 				/*! set iterator */
-				typename std::list<EPtr>::iterator m_iter;
+				typename std::vector<EPtr>::iterator m_iter;
 
 			};
 
@@ -253,11 +253,11 @@ namespace MeshLib
 				bool reachEnd() { return m_iter == TMeshType::EdgeTEdgeList(m_pEdge)->end(); };
 			protected:
 				/*! Private construction function, only used to generate begin, end and tmp iterator*/
-				E_TEIterator(EPtr pE, typename std::list<TEPtr>::iterator iter) : m_pEdge(pE), m_iter(iter) {};
+				E_TEIterator(EPtr pE, typename std::vector<TEPtr>::iterator iter) : m_pEdge(pE), m_iter(iter) {};
 				/*! pointer to the edge */
 				EPtr m_pEdge;
 				/*! TEdge list iterator */
-				typename std::list<TEPtr>::iterator m_iter;
+				typename std::vector<TEPtr>::iterator m_iter;
 			};
 
 			/*!
@@ -294,7 +294,7 @@ namespace MeshLib
 				/*! Edge List of the point */
 				VPtr m_pV;
 				/*! Edge list iterator */
-				typename std::list<EPtr>::iterator m_iter;
+				typename std::vector<EPtr>::iterator m_iter;
 			};
 
 			/*!
@@ -845,11 +845,11 @@ namespace MeshLib
 				
 			protected:
 
-				V_TVIterator(VPtr pV, typename std::list<TVPtr>::iterator iter) : m_pV(pV), m_iter(iter) {};
+				V_TVIterator(VPtr pV, typename std::vector<TVPtr>::iterator iter) : m_pV(pV), m_iter(iter) {};
 				/*! pointer to the vertex */
 				VPtr m_pV;
 				/*! TVertex list iterator */
-				typename std::list<TVPtr>::iterator m_iter;
+				typename std::vector<TVPtr>::iterator m_iter;
 
 			};
 

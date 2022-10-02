@@ -158,10 +158,15 @@ namespace MeshLib
 				*/
 			FContainer        & faces() { return mFContainer; };
 
+			HEContainer& half_edges() { return mHEContainer; };
+
+			TEContainer& tedges() { return mTEContainer; };
+
 			/*!
 			access list of vertices
 			*/
 			VContainer & vertices() { return mVContainer; };
+			TVContainer & tvertices() { return mTVContainer; };
 
 			/*! number of tets */
 			int numTets() { return m_nTets; };
@@ -188,13 +193,13 @@ namespace MeshLib
 
 			//Access Vertex data members
 			/*! Vertex->Edge List */
-			static std::list<EdgeType*>* VertexEdgeList(VertexType* pVertex);
+			static std::vector<EdgeType*>* VertexEdgeList(VertexType* pVertex);
 			/*! Vertex->TEdge List */
 			TEArray& VertexTEdgeList(VertexType* pVertex);
 			/*! Vertex->HalfFace List */
 			static std::list<HalfFaceType*>* VertexHalfFaceList(VertexType* pVertex);
 			/*! Vertex->TVertex List */
-			static std::list<TVertexType*>* VertexTVertexList(VertexType* pVertex);
+			static std::vector<TVertexType*>* VertexTVertexList(VertexType* pVertex);
 
 			/*! Vertex->Edge */
 			static EdgeType* VertexEdge(VertexType* v1, VertexType* v2);
@@ -242,7 +247,7 @@ namespace MeshLib
 
 			//Access Edge data members
 			/*! TEdge list of the edge */
-			static std::list<TEdgeType*>* EdgeTEdgeList(EdgeType* pEdge);
+			static std::vector<TEdgeType*>* EdgeTEdgeList(EdgeType* pEdge);
 			/*! Edge->Vertex1 */
 			static VertexType* EdgeVertex1(EdgeType* pEdge);
 			/*! Edge->Vertex2 */
@@ -282,6 +287,8 @@ namespace MeshLib
 						\return pointer to the new vertex
 						*/
 			VertexType* createVertexWithIndex();
+
+			TVertexType* createTVertex();
 
 			/*! Create a face with automatically assigned index, 
 			* the index is the index in its containter, its id will be set to =index
@@ -398,6 +405,11 @@ namespace MeshLib
 			 array of vertices
 			 */
 			VContainer		 mVContainer;
+
+			/*!
+			 array of vertices
+			 */
+			TVContainer		 mTVContainer;
 			//VertexType *				 mVContainer;
 
 			/*!
@@ -676,13 +688,13 @@ namespace MeshLib
 				if (!stokenizer.nextToken("\t\r\n")) continue;
 				token = stokenizer.getToken();
 
-				int sp = (int)token.find("{");
-				int ep = (int)token.find("}");
+				//int sp = (int)token.find("{");
+				//int ep = (int)token.find("}");
 
-				if (sp >= 0 && ep >= 0)
-				{
-					v->string() = token.substr(sp + 1, ep - sp - 1);
-				}
+				//if (sp >= 0 && ep >= 0)
+				//{
+				//	v->string() = token.substr(sp + 1, ep - sp - 1);
+				//}
 			}
 
 
@@ -727,15 +739,15 @@ namespace MeshLib
 				}
 				// read in string
 				if (!stokenizer.nextToken("\t\r\n")) continue;
-				token = stokenizer.getToken();
+				//token = stokenizer.getToken();
 
-				int sp = (int)token.find("{");
-				int ep = (int)token.find("}");
+				//int sp = (int)token.find("{");
+				//int ep = (int)token.find("}");
 
-				if (sp >= 0 && ep >= 0)
-				{
-					pT->string() = token.substr(sp + 1, ep - sp - 1);
-				}
+				//if (sp >= 0 && ep >= 0)
+				//{
+				//	pT->string() = token.substr(sp + 1, ep - sp - 1);
+				//}
 			}
 
 			_construct_faces();
@@ -776,13 +788,13 @@ namespace MeshLib
 
 				token = stokenizer.getToken();
 
-				int sp = (int)token.find("{");
-				int ep = (int)token.find("}");
+				//int sp = (int)token.find("{");
+				//int ep = (int)token.find("}");
 
-				if (sp >= 0 && ep >= 0)
-				{
-					pE->string() = token.substr(sp + 1, ep - sp - 1);
-				}
+				//if (sp >= 0 && ep >= 0)
+				//{
+				//	pE->string() = token.substr(sp + 1, ep - sp - 1);
+				//}
 			}
 
 			m_nEdges = (int)mEContainer.size();
@@ -826,6 +838,8 @@ namespace MeshLib
 			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
 				VertexType * pV = *vIter;
+				pV->edges()->shrink_to_fit();
+				pV->tvertices()->shrink_to_fit();
 				pV->_from_string();
 			}
 
@@ -929,6 +943,8 @@ namespace MeshLib
 			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
 				VertexType* pV = *vIter;
+				pV->edges()->shrink_to_fit();
+				pV->tvertices()->shrink_to_fit()
 				pV->_from_string();
 			}
 
@@ -966,7 +982,9 @@ namespace MeshLib
 				pH[i] = createHalfEdgeWithIndex();
 
 				pH[i]->SetHalfFace(pHF);
-				pH[i]->SetSource(pTV[i]);
+				//pH[i]->
+				
+				//SetSource(pTV[i]);
 				pH[i]->SetTarget(pTV[(i + 1) % 3]);
 				pTV[i]->set_halfedge(pH[i]);
 			}
@@ -1003,7 +1021,6 @@ namespace MeshLib
 			assert(pHF->key(1) < pHF->key(2));
 
 			VertexType * pv = m_map_Vertices[pHF->key(0)];
-
 			pv->HalfFaces()->push_back(pHF);
 
 			return pHF;
@@ -1135,7 +1152,7 @@ namespace MeshLib
 
 			for (int k = 0; k < 4; k++)
 			{
-				TVertexType * pTV = new TVertexType();
+				TVertexType * pTV = createTVertex();
 				pT->setTVertex(pTV, k);
 				pTV->id() = k;
 
@@ -1267,7 +1284,7 @@ namespace MeshLib
 
 			for (int k = 0; k < 4; k++)
 			{
-				TVertexType * pTV = new TVertexType();
+				TVertexType * pTV = createTVertex();
 				pT->setTVertex(pTV, k);
 				pTV->id() = k;
 
@@ -1477,10 +1494,10 @@ namespace MeshLib
 						_os << " " << p[k];
 					}
 				}
-				if (pV->string().size() > 0)
-				{
-					_os << " " << "{" << pV->string() << "}";
-				}
+				//if (pV->string().size() > 0)
+				//{
+				//	_os << " " << "{" << pV->string() << "}";
+				//}
 				_os << std::endl;
 			}
 
@@ -1492,21 +1509,21 @@ namespace MeshLib
 				{
 					_os << " " << pT->tvertex(k)->vert()->id();
 				}
-				if (pT->string().size() > 0)
-				{
-					_os << " " << "{" << pT->string() << "}";
-				}
+				//if (pT->string().size() > 0)
+				//{
+				//	_os << " " << "{" << pT->string() << "}";
+				//}
 				_os << std::endl;
 			}
 
 			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
 			{
 				EdgeType * pE = *eIter;
-				if (pE->string().size() > 0)
-				{
-					_os << "Edge " << EdgeVertex1(pE)->id() << " " << EdgeVertex2(pE)->id() << " ";
-					_os << "{" << pE->string() << "}" << std::endl;
-				}
+				//if (pE->string().size() > 0)
+				//{
+				//	_os << "Edge " << EdgeVertex1(pE)->id() << " " << EdgeVertex2(pE)->id() << " ";
+				//	_os << "{" << pE->string() << "}" << std::endl;
+				//}
 			}
 
 			_os.close();
@@ -1670,9 +1687,9 @@ namespace MeshLib
 		Access Vertex data members
 		--------------------------------------------------------------------------------------------------*/
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
-		inline std::list<EdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdgeList(VertexType* pVertex)
+		inline std::vector<EdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdgeList(VertexType* pVertex)
 		{
-			return (std::list<EdgeType*>*) pVertex->edges();
+			return (std::vector<EdgeType*>*) pVertex->edges();
 		};
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
@@ -1688,17 +1705,17 @@ namespace MeshLib
 		};
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
-		inline std::list<TVertexType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexTVertexList(VertexType* pVertex)
+		inline std::vector<TVertexType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexTVertexList(VertexType* pVertex)
 		{
-			return (std::list<TVertexType*>*) pVertex->tvertices();
+			return (std::vector<TVertexType*>*) pVertex->tvertices();
 		};
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		inline EdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdge(VertexType* v1, VertexType* v2)
 		{
-			std::list<EdgeType*>* vEdgeList = VertexEdgeList(v1);
+			std::vector<EdgeType*>* vEdgeList = VertexEdgeList(v1);
 
-			for (std::list<EdgeType*>::iterator titer = (*vEdgeList).begin(); titer != (*vEdgeList).end(); titer++)
+			for (std::vector<EdgeType*>::iterator titer = (*vEdgeList).begin(); titer != (*vEdgeList).end(); titer++)
 			{
 				EdgeType* pE = *titer;
 
@@ -1853,9 +1870,9 @@ namespace MeshLib
 		}
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
-		inline std::list<TEdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeTEdgeList(EdgeType* pEdge)
+		inline std::vector<TEdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeTEdgeList(EdgeType* pEdge)
 		{
-			return (std::list<TEdgeType*>*) pEdge->edges();
+			return (std::vector<TEdgeType*>*) pEdge->edges();
 		}
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
@@ -2075,6 +2092,17 @@ namespace MeshLib
 			pV->id() = (int)pV->index();
 			m_map_Vertices.insert(VMapPair(pV->id(), pV));
 			return pV;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TVertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createTVertex()
+		{
+			size_t index;
+			TVertexType* pTV = mTVContainer.newMember(index);
+			assert(pTV != NULL);
+			pTV->index() = index;
+
+			return pTV;
 		}
 
 		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>

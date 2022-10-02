@@ -12,6 +12,7 @@
 #define _TMESHLIB_EDGE_H_
 
 #include <list>
+#include <vector>
 #include "../Geometry/Point.h"
 #include "../Geometry/Point2.h"
 
@@ -39,7 +40,7 @@ namespace MeshLib
 
 			~CEdge() { m_lTEdges.clear(); };
 
-			std::list<CTEdge*> * edges() { return &m_lTEdges; };
+			std::vector<CTEdge*> * edges() { return &m_lTEdges; };
 
 			bool   & boundary() { return m_bIsBoundary; };
 
@@ -49,19 +50,22 @@ namespace MeshLib
 			void SetVertex1(CVertex* v) { m_vertices[0] = v; };
 			void SetVertex2(CVertex* v) { m_vertices[1] = v; };
 
+			int& key(int k) { return m_key[k]; };
+
 			virtual void _from_string() { };
 			virtual void _to_string() { };
 
-			std::string & string() { return m_string; };
+			//std::string & string() { return m_string; };
 		public:
 			size_t& index() { return m_index; };
 		private:
 			size_t m_index;
 		protected:
-			std::list<CTEdge*> m_lTEdges;
+			std::vector<CTEdge*> m_lTEdges;
 			CVertex *  m_vertices[2];
 			bool     m_bIsBoundary;
-			std::string m_string;
+			//std::string m_string;
+			int            m_key[2]; // The ids of the two vertices on the tdge, sorted thus m_key[0] < m_key[1]
 
 		};
 

@@ -12,6 +12,7 @@
 #define _TMESHLIB_VERTEX_H_
 
 #include <list>
+#include <vector>
 #include "../Geometry/Point.h"
 #include "../Memory/Array.h"
 
@@ -29,9 +30,12 @@ namespace MeshLib
 
 		//typedef CPArray<CEdge*, 12> CEArray;
 		//typedef CPArray<CTVertex*, 12> CTVArray;
+		
+		typedef std::vector<CEdge*> CEArray;
+		typedef std::vector<CTVertex*> CTVArray;
 
-		typedef std::list<CEdge*> CEArray;
-		typedef std::list<CTVertex*> CTVArray;
+		//typedef std::vector<CEdge*> CEArray;
+		//typedef std::vector<CTVertex*> CTVArray;
 
 		class CVertex
 		{
@@ -50,7 +54,7 @@ namespace MeshLib
 			//std::list<CTEdge*>  * tedges(){ return &m_pTEdges; };
 			std::list<CHalfFace*>  * HalfFaces(){ return &m_pHFaces; };
 
-			std::string&        string(){ return m_string; };
+			//std::string&        string(){ return m_string; };
 
 			virtual void _from_string() { };
 			virtual void _to_string() { };
@@ -68,7 +72,7 @@ namespace MeshLib
 			CTVArray   m_pTVertices;	//adjacent TVertecies
 			CEArray      m_pEdges;	    //adjacent Edges;
 
-			std::string m_string;
+			//std::string m_string;
 		};
 	};
 };

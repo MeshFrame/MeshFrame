@@ -36,7 +36,7 @@ namespace MeshLib
 		public:
 			CHalfEdge()
 			{
-				m_pSource = NULL;
+				//m_pSource = NULL;
 				m_pTarget = NULL;
 				m_pDual = NULL;
 				m_pNext = NULL;
@@ -47,10 +47,10 @@ namespace MeshLib
 
 			~CHalfEdge(){};
 
-			CVertex* source() { return m_pSource->vert(); };
+			CVertex* source() { return m_pPrev->target(); };
 			CVertex* target()  { return m_pTarget->vert(); };
 
-			CTVertex * tSource() { return m_pSource; };
+			CTVertex * tSource() { return  m_pPrev->tTarget(); };
 			CTVertex * tTarget()  { return m_pTarget; };
 
 			CHalfEdge* dual() { return m_pDual; };
@@ -59,7 +59,7 @@ namespace MeshLib
 			CTEdge   * tedge(){ return m_pTEdge; };
 			CHalfFace* half_face() { return m_pHalfFace; };
 
-			void SetSource(CTVertex* pVert){ m_pSource = pVert; };
+			//void SetSource(CTVertex* pVert){ m_pSource = pVert; };
 			void SetTarget(CTVertex* pVert){ m_pTarget = pVert; };
 			void SetDual(CHalfEdge* pHe){ m_pDual = pHe; };
 			void SetNext(CHalfEdge* pHe){ m_pNext = pHe; };
@@ -77,7 +77,7 @@ namespace MeshLib
 
 		protected:
 
-			CTVertex   *m_pSource;
+			//CTVertex   *m_pSource;
 			CTVertex   *m_pTarget;
 			CHalfEdge  *m_pDual;
 			CHalfEdge  *m_pNext;
