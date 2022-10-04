@@ -139,6 +139,14 @@ public:
 		--mSize;
 	}
 
+	bool has(const T & t) {
+		for (size_t j = 0; j < mSize; ++j) {
+			if (t == pMem[j]) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	size_t size() { return mSize; }
 	size_t capacity() { return mCapacity; }

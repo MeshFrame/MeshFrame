@@ -107,7 +107,7 @@ namespace MeshLib {
 		*/
 		void			read_obj(const char * filename, bool removeIsolatedVertices = true);
 
-		void            readVFList(const std::vector<std::array<double, 3>>* verts, const std::vector<std::array<int, 3>>* faces, const std::vector<int>* vIds=nullptr);
+		void            readVFList(const std::vector<std::array<double, 3>>* verts, const std::vector<std::array<int, 3>>* faces, const std::vector<int>* vIds=nullptr, bool removeIsolatedVerts=true);
 
 		/*!
 		Write an .obj file.
@@ -2778,7 +2778,8 @@ namespace MeshLib {
 
 
 	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
-	inline void CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::readVFList(const std::vector<std::array<double, 3>>* verts, const std::vector<std::array<int, 3>>* faces, const std::vector<int>* vIds )
+	inline void CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::readVFList(const std::vector<std::array<double, 3>>* verts, const std::vector<std::array<int, 3>>* faces, 
+		const std::vector<int>* vIds, bool removeIsolatedVerts)
 	{
 
 		for (int iV = 0; iV < verts->size(); iV++)
@@ -2818,21 +2819,23 @@ namespace MeshLib {
 			}
 		}
 		/*Remove isolated vertex*/
-		std::vector<VertexType*> isolatedVertexs;
-		//#pragma omp parallel for
-		for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
-		{
-			VertexType* currentV = mVContainer.getPointer(i);
-			if (mVContainer.hasBeenDeleted(currentV->index()) == false)
+		if (removeIsolatedVerts) {
+			std::vector<VertexType*> isolatedVertexs;
+			//#pragma omp parallel for
+			for (int i = 0; i < mVContainer.getCurrentIndex(); ++i)
 			{
-				if (currentV->halfedge() != NULL) continue;
-				isolatedVertexs.push_back(currentV);
+				VertexType* currentV = mVContainer.getPointer(i);
+				if (mVContainer.hasBeenDeleted(currentV->index()) == false)
+				{
+					if (currentV->halfedge() != NULL) continue;
+					isolatedVertexs.push_back(currentV);
+				}
 			}
-		}
-		for (auto vertex : isolatedVertexs)
-		{
-			VertexType* currentV = vertex;
-			mVContainer.deleteMember(currentV->index());
+			for (auto vertex : isolatedVertexs)
+			{
+				VertexType* currentV = vertex;
+				mVContainer.deleteMember(currentV->index());
+			}
 		}
 		/*
 		*	Arrange the boundary half_edge of boundary vertices, to make its halfedge

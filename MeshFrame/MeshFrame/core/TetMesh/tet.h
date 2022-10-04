@@ -37,7 +37,8 @@ namespace MeshLib
 
 			CHalfFace * half_face(int j) { return m_pHalfFace[j]; };
 			CTVertex *  tvertex(int j) { return m_pTVertex[j]; };
-			CVertex * vertex(int j) { return m_pTVertex[j]->vert(); };
+			CVertex* vertex(int j) { return m_pTVertex[j]->vert(); };
+			const CVertex * vertex(int j) const { return m_pTVertex[j]->vert(); };
 			void setTVertex(CTVertex * pTV, int j) { m_pTVertex[j] = pTV; };
 			void setHalfFace(CHalfFace * pHF, int j) { m_pHalfFace[j] = pHF; };
 
