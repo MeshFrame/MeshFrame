@@ -142,6 +142,9 @@ namespace MeshLib {
 			T * pStartMember = memoryBlockPtrVec[blockIndex];
 			return pStartMember + offSet;
 		};
+
+		// non-copyable
+		PropPool(const PropPool&) = delete;
 	private:
 		const size_t blockSize;
 		std::vector<T*> memoryBlockPtrVec;

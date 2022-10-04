@@ -118,6 +118,12 @@ namespace MeshLib
 				Load tet mesh from a ".t" file
 				*/
 			void _load_t(const char * input, bool checkOrientation = false);
+
+			/*!
+			Load tet mesh from a ".t" file
+			*/
+			void _load_vtArray(const std::vector<std::array<double, 3>>& verts, const std::vector<std::array<int, 4>>& tetVIds, bool checkOrientation = false);
+
 			/*!
 				Write tet mesh to a file
 				*/
@@ -127,6 +133,7 @@ namespace MeshLib
 			Write tet mesh to a .t file
 			*/
 			void _write_t(const char * filename, bool highPrecision = false);
+
 
 			/*!
 			Write tet mesh to a .vtk file
@@ -151,13 +158,21 @@ namespace MeshLib
 				*/
 			FContainer        & faces() { return mFContainer; };
 
+			HEContainer& half_edges() { return mHEContainer; };
+
+			TEContainer& tedges() { return mTEContainer; };
+
 			/*!
 			access list of vertices
 			*/
 			VContainer & vertices() { return mVContainer; };
+			TVContainer & tvertices() { return mTVContainer; };
 
 			/*! number of tets */
 			int numTets() { return m_nTets; };
+
+			/*! number of edges */
+			int numEdges() { return mEContainer.size(); };
 
 			/*! number of vertices */
 			int numVertices() { return m_nVertices; };
@@ -178,13 +193,13 @@ namespace MeshLib
 
 			//Access Vertex data members
 			/*! Vertex->Edge List */
-			static std::list<EdgeType*>* VertexEdgeList(VertexType* pVertex);
+			static std::vector<EdgeType*>* VertexEdgeList(VertexType* pVertex);
 			/*! Vertex->TEdge List */
 			TEArray& VertexTEdgeList(VertexType* pVertex);
 			/*! Vertex->HalfFace List */
 			static std::list<HalfFaceType*>* VertexHalfFaceList(VertexType* pVertex);
 			/*! Vertex->TVertex List */
-			static std::list<TVertexType*>* VertexTVertexList(VertexType* pVertex);
+			static std::vector<TVertexType*>* VertexTVertexList(VertexType* pVertex);
 
 			/*! Vertex->Edge */
 			static EdgeType* VertexEdge(VertexType* v1, VertexType* v2);
@@ -232,7 +247,7 @@ namespace MeshLib
 
 			//Access Edge data members
 			/*! TEdge list of the edge */
-			static std::list<TEdgeType*>* EdgeTEdgeList(EdgeType* pEdge);
+			static std::vector<TEdgeType*>* EdgeTEdgeList(EdgeType* pEdge);
 			/*! Edge->Vertex1 */
 			static VertexType* EdgeVertex1(EdgeType* pEdge);
 			/*! Edge->Vertex2 */
@@ -272,6 +287,8 @@ namespace MeshLib
 						\return pointer to the new vertex
 						*/
 			VertexType* createVertexWithIndex();
+
+			TVertexType* createTVertex();
 
 			/*! Create a face with automatically assigned index, 
 			* the index is the index in its containter, its id will be set to =index
@@ -388,6 +405,11 @@ namespace MeshLib
 			 array of vertices
 			 */
 			VContainer		 mVContainer;
+
+			/*!
+			 array of vertices
+			 */
+			TVContainer		 mTVContainer;
 			//VertexType *				 mVContainer;
 
 			/*!
@@ -666,13 +688,13 @@ namespace MeshLib
 				if (!stokenizer.nextToken("\t\r\n")) continue;
 				token = stokenizer.getToken();
 
-				int sp = (int)token.find("{");
-				int ep = (int)token.find("}");
+				//int sp = (int)token.find("{");
+				//int ep = (int)token.find("}");
 
-				if (sp >= 0 && ep >= 0)
-				{
-					v->string() = token.substr(sp + 1, ep - sp - 1);
-				}
+				//if (sp >= 0 && ep >= 0)
+				//{
+				//	v->string() = token.substr(sp + 1, ep - sp - 1);
+				//}
 			}
 
 
@@ -717,15 +739,15 @@ namespace MeshLib
 				}
 				// read in string
 				if (!stokenizer.nextToken("\t\r\n")) continue;
-				token = stokenizer.getToken();
+				//token = stokenizer.getToken();
 
-				int sp = (int)token.find("{");
-				int ep = (int)token.find("}");
+				//int sp = (int)token.find("{");
+				//int ep = (int)token.find("}");
 
-				if (sp >= 0 && ep >= 0)
-				{
-					pT->string() = token.substr(sp + 1, ep - sp - 1);
-				}
+				//if (sp >= 0 && ep >= 0)
+				//{
+				//	pT->string() = token.substr(sp + 1, ep - sp - 1);
+				//}
 			}
 
 			_construct_faces();
@@ -766,13 +788,13 @@ namespace MeshLib
 
 				token = stokenizer.getToken();
 
-				int sp = (int)token.find("{");
-				int ep = (int)token.find("}");
+				//int sp = (int)token.find("{");
+				//int ep = (int)token.find("}");
 
-				if (sp >= 0 && ep >= 0)
-				{
-					pE->string() = token.substr(sp + 1, ep - sp - 1);
-				}
+				//if (sp >= 0 && ep >= 0)
+				//{
+				//	pE->string() = token.substr(sp + 1, ep - sp - 1);
+				//}
 			}
 
 			m_nEdges = (int)mEContainer.size();
@@ -816,6 +838,8 @@ namespace MeshLib
 			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
 			{
 				VertexType * pV = *vIter;
+				pV->edges()->shrink_to_fit();
+				pV->tvertices()->shrink_to_fit();
 				pV->_from_string();
 			}
 
@@ -836,6 +860,110 @@ namespace MeshLib
 		};
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		void CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_load_vtArray(
+			const std::vector<std::array<double, 3>>& verts, const std::vector<std::array<int, 4>>& tetVIds, bool checkOrientation)
+		{
+			addVProp(mVHFArrayHandle);
+			addVProp(mVTEArrayHandle);
+
+			m_maxVertexId = verts.size()-1;
+
+			m_nVertices = verts.size();
+			m_nTets = tetVIds.size();
+			m_nEdges = 0;
+
+			//read in the vertices
+			for (int i = 0; i < m_nVertices; i++)
+			{
+				int vid = i;
+
+				CPoint p(verts[i][0], verts[i][1], verts[i][2]);
+
+				VertexType* v = createVertexWithId(vid);
+				v->position() = p;
+			}
+
+
+			//read in tets 
+			for (int id = 0; id < m_nTets; id++)
+			{
+				int tid = id;
+				int vIds[4] = { tetVIds[id][0], tetVIds[id][1], tetVIds[id][2], tetVIds[id][3]};
+
+				TetType* pT = createTetWithId(tid);
+
+				if (checkOrientation) {
+					_construct_tet_orientation(pT, tid, vIds);
+				}
+				else {
+					_construct_tet(pT, tid, vIds);
+				}
+
+			}
+
+			_construct_faces();
+			_construct_edges();
+
+			m_nEdges = (int)mEContainer.size();
+
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
+			{
+				VertexType* pV = *vIter;
+				if (pV->id() > m_maxVertexId)
+				{
+					m_maxVertexId = pV->id();
+				}
+			}
+
+			// label the boundary for faces and vertices
+			for (auto fIter = mFContainer.begin(); fIter != mFContainer.end(); ++fIter)
+			{
+				FPtr pF = *fIter;
+				if (this->FaceLeftHalfFace(pF) == NULL || this->FaceRightHalfFace(pF) == NULL)
+				{
+					pF->boundary() = true;
+					HalfFaceType* pH =
+						FaceLeftHalfFace(pF) == NULL ? FaceRightHalfFace(pF) : FaceLeftHalfFace(pF);
+					//added by Anka, mark edge as boundary
+					HalfEdgeType* pHE = (HalfEdgeType*)pH->half_edge();
+
+					for (int i = 0; i < 3; ++i)
+					{
+						EdgeType* pE = HalfEdgeEdge(pHE);
+						int vid = pH->key(i);
+						VertexType* v = idVertex(vid);
+						v->boundary() = true;
+						pE->boundary() = true;
+						pHE = HalfEdgeNext(pHE);
+					}
+				}
+			}
+
+			// read in traits
+			for (auto vIter = mVContainer.begin(); vIter != mVContainer.end(); vIter++)
+			{
+				VertexType* pV = *vIter;
+				pV->edges()->shrink_to_fit();
+				pV->tvertices()->shrink_to_fit()
+				pV->_from_string();
+			}
+
+			for (auto tIter = mTContainer.begin(); tIter != mTContainer.end(); tIter++)
+			{
+				TetType* pT = *tIter;
+				pT->_from_string();
+			}
+
+			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
+			{
+				EdgeType* pE = *eIter;
+				pE->_from_string();
+			}
+
+			removeVProp(mVTEArrayHandle);
+		}
+
+		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 
 		HalfFaceType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::_construct_half_face(TVertexType ** pTV)
 		{
@@ -854,7 +982,9 @@ namespace MeshLib
 				pH[i] = createHalfEdgeWithIndex();
 
 				pH[i]->SetHalfFace(pHF);
-				pH[i]->SetSource(pTV[i]);
+				//pH[i]->
+				
+				//SetSource(pTV[i]);
 				pH[i]->SetTarget(pTV[(i + 1) % 3]);
 				pTV[i]->set_halfedge(pH[i]);
 			}
@@ -891,7 +1021,6 @@ namespace MeshLib
 			assert(pHF->key(1) < pHF->key(2));
 
 			VertexType * pv = m_map_Vertices[pHF->key(0)];
-
 			pv->HalfFaces()->push_back(pHF);
 
 			return pHF;
@@ -1023,7 +1152,7 @@ namespace MeshLib
 
 			for (int k = 0; k < 4; k++)
 			{
-				TVertexType * pTV = new TVertexType();
+				TVertexType * pTV = createTVertex();
 				pT->setTVertex(pTV, k);
 				pTV->id() = k;
 
@@ -1155,7 +1284,7 @@ namespace MeshLib
 
 			for (int k = 0; k < 4; k++)
 			{
-				TVertexType * pTV = new TVertexType();
+				TVertexType * pTV = createTVertex();
 				pT->setTVertex(pTV, k);
 				pTV->id() = k;
 
@@ -1365,10 +1494,10 @@ namespace MeshLib
 						_os << " " << p[k];
 					}
 				}
-				if (pV->string().size() > 0)
-				{
-					_os << " " << "{" << pV->string() << "}";
-				}
+				//if (pV->string().size() > 0)
+				//{
+				//	_os << " " << "{" << pV->string() << "}";
+				//}
 				_os << std::endl;
 			}
 
@@ -1380,21 +1509,21 @@ namespace MeshLib
 				{
 					_os << " " << pT->tvertex(k)->vert()->id();
 				}
-				if (pT->string().size() > 0)
-				{
-					_os << " " << "{" << pT->string() << "}";
-				}
+				//if (pT->string().size() > 0)
+				//{
+				//	_os << " " << "{" << pT->string() << "}";
+				//}
 				_os << std::endl;
 			}
 
 			for (auto eIter = mEContainer.begin(); eIter != mEContainer.end(); eIter++)
 			{
 				EdgeType * pE = *eIter;
-				if (pE->string().size() > 0)
-				{
-					_os << "Edge " << EdgeVertex1(pE)->id() << " " << EdgeVertex2(pE)->id() << " ";
-					_os << "{" << pE->string() << "}" << std::endl;
-				}
+				//if (pE->string().size() > 0)
+				//{
+				//	_os << "Edge " << EdgeVertex1(pE)->id() << " " << EdgeVertex2(pE)->id() << " ";
+				//	_os << "{" << pE->string() << "}" << std::endl;
+				//}
 			}
 
 			_os.close();
@@ -1558,9 +1687,9 @@ namespace MeshLib
 		Access Vertex data members
 		--------------------------------------------------------------------------------------------------*/
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
-		inline std::list<EdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdgeList(VertexType* pVertex)
+		inline std::vector<EdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdgeList(VertexType* pVertex)
 		{
-			return (std::list<EdgeType*>*) pVertex->edges();
+			return (std::vector<EdgeType*>*) pVertex->edges();
 		};
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
@@ -1576,17 +1705,17 @@ namespace MeshLib
 		};
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
-		inline std::list<TVertexType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexTVertexList(VertexType* pVertex)
+		inline std::vector<TVertexType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexTVertexList(VertexType* pVertex)
 		{
-			return (std::list<TVertexType*>*) pVertex->tvertices();
+			return (std::vector<TVertexType*>*) pVertex->tvertices();
 		};
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		inline EdgeType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::VertexEdge(VertexType* v1, VertexType* v2)
 		{
-			std::list<EdgeType*>* vEdgeList = VertexEdgeList(v1);
+			std::vector<EdgeType*>* vEdgeList = VertexEdgeList(v1);
 
-			for (std::list<EdgeType*>::iterator titer = (*vEdgeList).begin(); titer != (*vEdgeList).end(); titer++)
+			for (std::vector<EdgeType*>::iterator titer = (*vEdgeList).begin(); titer != (*vEdgeList).end(); titer++)
 			{
 				EdgeType* pE = *titer;
 
@@ -1741,9 +1870,9 @@ namespace MeshLib
 		}
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
-		inline std::list<TEdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeTEdgeList(EdgeType* pEdge)
+		inline std::vector<TEdgeType*>* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::EdgeTEdgeList(EdgeType* pEdge)
 		{
-			return (std::list<TEdgeType*>*) pEdge->edges();
+			return (std::vector<TEdgeType*>*) pEdge->edges();
 		}
 
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
@@ -1847,15 +1976,19 @@ namespace MeshLib
 		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		inline bool CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::PointInTet(TPtr pT, const CPoint& p)
 		{
-	
+			double tetOrientedVol = TetOrientedVolume(pT);
 			for (int iHF = 0; iHF < 4; iHF++) {
 				HalfFaceType* pHF = TetHalfFace(pT, iHF);
 				HalfEdgeType* pHE = HalfFaceHalfEdge(pHF);
-				CPoint halfFacePt = HalfEdgeSource(pHE)->position();
+				const CPoint& halfFacePt = HalfEdgeTarget(pHE)->position();
 				
 				CPoint normalD = HalfFaceOrientedArea(pHF);
 				double orientedVolume = (p - halfFacePt) * normalD;
-				if (orientedVolume > 0) {
+				if (orientedVolume > 0 && tetOrientedVol > 0) {
+					return false;
+				}
+				else if (orientedVolume < 0 && tetOrientedVol < 0)
+				{
 					return false;
 				}
 			}
@@ -1901,10 +2034,10 @@ namespace MeshLib
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		inline double CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TetOrientedVolume(TetType* pT)
 		{
-			CPoint A = pT->vertex(0)->position();
-			CPoint B = pT->vertex(1)->position();
-			CPoint C = pT->vertex(2)->position();
-			CPoint D = pT->vertex(3)->position();
+			const CPoint& A = pT->vertex(0)->position();
+			const CPoint& B = pT->vertex(1)->position();
+			const CPoint& C = pT->vertex(2)->position();
+			const CPoint& D = pT->vertex(3)->position();
 			CPoint AB = B - A;
 			CPoint AC = C - A;
 			CPoint AD = D - A;
@@ -1959,6 +2092,17 @@ namespace MeshLib
 			pV->id() = (int)pV->index();
 			m_map_Vertices.insert(VMapPair(pV->id(), pV));
 			return pV;
+		}
+
+		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
+		inline TVertexType* CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::createTVertex()
+		{
+			size_t index;
+			TVertexType* pTV = mTVContainer.newMember(index);
+			assert(pTV != NULL);
+			pTV->index() = index;
+
+			return pTV;
 		}
 
 		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>

@@ -47,7 +47,7 @@ namespace MeshLib
 			virtual void _from_string() { };
 			virtual void _to_string() { };
 
-			std::string string() { return m_string; };
+			//std::string string() { return m_string; };
 		public:
 			size_t& index() { return m_index; };
 		private:
@@ -58,7 +58,7 @@ namespace MeshLib
 			CTVertex   * m_pTVertex[4];
 			int          m_iID;
 
-			std::string m_string;
+			//std::string m_string;
 		};
 	};
 };

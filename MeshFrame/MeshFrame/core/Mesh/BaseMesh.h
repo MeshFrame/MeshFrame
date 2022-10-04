@@ -72,7 +72,8 @@ namespace MeshLib {
 		typedef MemoryPool<HalfEdgeType>			HEContainer;
 
 		// pointer to Vertices, Halfedges, Edges, Face and Solid
-		typedef CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType> * Ptr;
+		typedef CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>* Ptr;
+		typedef std::shared_ptr<CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>> * SharedPtr;
 
 		typedef VertexType   * VPtr;
 		typedef EdgeType	 * EPtr;
@@ -2819,6 +2820,7 @@ namespace MeshLib {
 			}
 		}
 		/*Remove isolated vertex*/
+		int  numIsolatedVertices = 0;
 		if (removeIsolatedVerts) {
 			std::vector<VertexType*> isolatedVertexs;
 			//#pragma omp parallel for
@@ -2833,8 +2835,15 @@ namespace MeshLib {
 			}
 			for (auto vertex : isolatedVertexs)
 			{
+				++numIsolatedVertices;
+
 				VertexType* currentV = vertex;
 				mVContainer.deleteMember(currentV->index());
+			}
+
+			if (numIsolatedVertices)
+			{
+				std::cout << "Removed " << numIsolatedVertices << " isolated vertices.";
 			}
 		}
 		/*
