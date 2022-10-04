@@ -1980,7 +1980,7 @@ namespace MeshLib
 			for (int iHF = 0; iHF < 4; iHF++) {
 				HalfFaceType* pHF = TetHalfFace(pT, iHF);
 				HalfEdgeType* pHE = HalfFaceHalfEdge(pHF);
-				CPoint halfFacePt = HalfEdgeSource(pHE)->position();
+				const CPoint& halfFacePt = HalfEdgeTarget(pHE)->position();
 				
 				CPoint normalD = HalfFaceOrientedArea(pHF);
 				double orientedVolume = (p - halfFacePt) * normalD;
@@ -2034,10 +2034,10 @@ namespace MeshLib
 		template <typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		inline double CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::TetOrientedVolume(TetType* pT)
 		{
-			CPoint A = pT->vertex(0)->position();
-			CPoint B = pT->vertex(1)->position();
-			CPoint C = pT->vertex(2)->position();
-			CPoint D = pT->vertex(3)->position();
+			const CPoint& A = pT->vertex(0)->position();
+			const CPoint& B = pT->vertex(1)->position();
+			const CPoint& C = pT->vertex(2)->position();
+			const CPoint& D = pT->vertex(3)->position();
 			CPoint AB = B - A;
 			CPoint AC = C - A;
 			CPoint AD = D - A;

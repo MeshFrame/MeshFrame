@@ -2820,6 +2820,7 @@ namespace MeshLib {
 			}
 		}
 		/*Remove isolated vertex*/
+		int  numIsolatedVertices = 0;
 		if (removeIsolatedVerts) {
 			std::vector<VertexType*> isolatedVertexs;
 			//#pragma omp parallel for
@@ -2834,8 +2835,15 @@ namespace MeshLib {
 			}
 			for (auto vertex : isolatedVertexs)
 			{
+				++numIsolatedVertices;
+
 				VertexType* currentV = vertex;
 				mVContainer.deleteMember(currentV->index());
+			}
+
+			if (numIsolatedVertices)
+			{
+				std::cout << "Removed " << numIsolatedVertices << " isolated vertices.";
 			}
 		}
 		/*

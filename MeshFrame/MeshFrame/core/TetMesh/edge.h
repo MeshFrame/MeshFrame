@@ -50,8 +50,6 @@ namespace MeshLib
 			void SetVertex1(CVertex* v) { m_vertices[0] = v; };
 			void SetVertex2(CVertex* v) { m_vertices[1] = v; };
 
-			int& key(int k) { return m_key[k]; };
-
 			virtual void _from_string() { };
 			virtual void _to_string() { };
 
@@ -65,7 +63,6 @@ namespace MeshLib
 			CVertex *  m_vertices[2];
 			bool     m_bIsBoundary;
 			//std::string m_string;
-			int            m_key[2]; // The ids of the two vertices on the tdge, sorted thus m_key[0] < m_key[1]
 
 		};
 
