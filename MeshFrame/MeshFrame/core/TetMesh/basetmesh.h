@@ -1976,7 +1976,7 @@ namespace MeshLib
 		template<typename TVertexType, typename VertexType, typename HalfEdgeType, typename TEdgeType, typename EdgeType, typename HalfFaceType, typename FaceType, typename TetType>
 		inline bool CTMesh<TVertexType, VertexType, HalfEdgeType, TEdgeType, EdgeType, HalfFaceType, FaceType, TetType>::PointInTet(TPtr pT, const CPoint& p)
 		{
-			double tetOrientedVol = TetOrientedVolume(pT);
+			/*double tetOrientedVol = TetOrientedVolume(pT);
 			for (int iHF = 0; iHF < 4; iHF++) {
 				HalfFaceType* pHF = TetHalfFace(pT, iHF);
 				HalfEdgeType* pHE = HalfFaceHalfEdge(pHF);
@@ -1991,7 +1991,34 @@ namespace MeshLib
 				{
 					return false;
 				}
+			}*/
+			CPoint vs4[4] = {
+				pT->vertex(0)->position(),
+				pT->vertex(1)->position(),
+				pT->vertex(2)->position(),
+				pT->vertex(3)->position()
+			};
+
+
+			CPoint AB = vs4[1] - vs4[0];
+			CPoint AC = vs4[2] - vs4[0];
+			CPoint AD = vs4[3] - vs4[0];
+
+			double tetOrientedVol = AB * (AC ^ AD);
+			
+			const int order[4][3] = { { 1, 2, 3 },{ 2, 0, 3 },{ 0, 1, 3 },{ 1, 0, 2 } };
+
+			for (int i = 0; i < 4; ++i) {
+
+				CPoint v1 = vs4[order[i][1]] - vs4[order[i][0]]; // HalfEdgeVec(pHE1);
+				CPoint v2 = vs4[order[i][2]] - vs4[order[i][1]];  // HalfEdgeVec(pHE2);
+				CPoint orientedAreaF = v1 ^ v2;
+				if ((p-vs4[order[i][0]]) * orientedAreaF * tetOrientedVol > 0)
+				{
+					return false;
+				}
 			}
+
 			return true;
 		}
 
