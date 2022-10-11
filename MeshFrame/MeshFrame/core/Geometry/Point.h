@@ -66,6 +66,8 @@ namespace MeshLib
 		 */
 		double norm() const { return sqrt(fabs(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])); };
 
+		double normSquare() const { return v[0] * v[0] + v[1] * v[1] + v[2] * v[2]; };
+
 		/*!
 		 * Add another point to the current point
 		 * \param p

@@ -73,7 +73,7 @@ namespace MeshLib
 			CHalfEdge    * m_pRight;
 			CEdge        * m_pEdge;
 			CTet         * m_pTet;
-			int            m_key[2]; // The ids of the two vertices on the tdge, sorted thus m_key[0] < m_key[1
+			int            m_key[2]; // The ids of the two vertices on the tdge, sorted thus m_key[0] < m_key[1]
 
 		};
 	};

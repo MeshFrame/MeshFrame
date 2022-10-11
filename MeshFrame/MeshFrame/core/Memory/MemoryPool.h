@@ -56,9 +56,12 @@ public:
 	/*Return the MemoryPool's maximal capacity*/
 	size_t capacity();
 	/*Return the MemoryPool's size*/
-	size_t size();
+	size_t size() const;
 	/*Return the MemoryPool's one single block's size*/
 	size_t getBlockSize() { return blockSize; };
+
+	// non-copyable
+	MemoryPool(const MemoryPool&) = delete;
 public:
 	/*Return the MemoryPool's cuurent index*/
 	size_t getCurrentIndex();
@@ -289,7 +292,7 @@ inline size_t MemoryPool<T>::capacity()
 }
 
 template<typename T>
-inline size_t MemoryPool<T>::size()
+inline size_t MemoryPool<T>::size() const
 {
 	//std::lock_guard<std::mutex> newMemberLockGuard(newMemberLock);
 	//std::lock_guard<std::mutex> deleteMemberLockGuard(deleteMemberLock);
