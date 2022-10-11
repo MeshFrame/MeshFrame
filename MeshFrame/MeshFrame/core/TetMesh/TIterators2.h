@@ -314,7 +314,7 @@ namespace MeshLib
 						for (int j = 0; j < 3; j++)
 						{
 							TEPtr pTE = TMeshType::HalfEdgeTEdge(pHE);
-							EPtr pE = TEdgeEdge(pTE);
+							EPtr pE = TMeshType::TEdgeEdge(pTE);
 							pEdges->insert(pE);
 							pHE = TMeshType::HalfEdgeNext(pHE);
 						}

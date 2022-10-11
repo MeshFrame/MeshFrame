@@ -166,7 +166,8 @@ namespace MeshLib
 			int maxVertexId() { return m_maxVertexId; };
 
 			/*! Access the array of tets */
-			TContainer & tets() { return mTContainer; };
+			TContainer& tets() { return mTContainer; };
+			const TContainer & tets() const { return mTContainer; };
 
 			/*! access the vertex with ID */
 			VertexType * idVertex(int id) { return m_map_Vertices[id]; };

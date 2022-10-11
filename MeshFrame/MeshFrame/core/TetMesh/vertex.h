@@ -39,7 +39,8 @@ namespace MeshLib
 			CVertex() { m_iID = 0; m_bIsBoundary = false; };
 			~CVertex(){ m_pTVertices.clear(); }
 
-			CPoint & position() { return m_vPosition; };
+			CPoint& position() { return m_vPosition; };
+			const CPoint & position() const { return m_vPosition; };
 			int    & id()       { return m_iID; };
 			size_t & index()    { return m_index; };
 			bool   & boundary()	{ return m_bIsBoundary; };

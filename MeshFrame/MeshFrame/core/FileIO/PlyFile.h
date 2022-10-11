@@ -422,14 +422,14 @@ inline PlyFile * PlyFileReader::ply_open_for_writing(
 	char *name;
 	FILE *fp;
 	/* tack on the extension .ply, if necessary */
-	name = (char *)myalloc(int(sizeof(char) * (strlen(filename)) + 5));
-	SAFE_STRCPY(name, filename);
-	if (strlen(name) < 4 ||
-		strcmp(name + strlen(name) - 4, ".ply") != 0)
-		SAFE_STRCAT(name, ".ply");
+	//name = (char *)myalloc(int(sizeof(char) * (strlen(filename)) + 6));
+	//SAFE_STRCPY(name, filename);
+	//if (strlen(name) < 4 ||
+	//	strcmp(name + strlen(name) - 4, ".ply") != 0)
+	//	strcat_s(name, int(sizeof(char) * (strlen(filename)) + 6), ".ply");
 	/* open the file for writing */
-	fp = fopen(name, "wb");
-	free(name);
+	fp = fopen(filename, "wb");
+	//free(name);
 	if (fp == NULL) {
 		return (NULL);
 	}
