@@ -299,6 +299,14 @@ namespace MeshLib {
 
 		//halfedge->vertex
 		/*!
+		The opposite vertex (the one vertex on the same face that is not on the halfedge) of a halfedge.
+		\param he the input halfedge.
+		\return the target vertex of he.
+		*/
+		static VPtr		halfedgeOppositeVertex(HEPtr pHE);
+
+		//halfedge->vertex
+		/*!
 		The target vertex of a halfedge.
 		\param he the input halfedge.
 		\return the target vertex of he.
@@ -838,6 +846,12 @@ namespace MeshLib {
 	{
 		return (VertexType*)pHE->vertex();
 	};
+
+	template<typename VertexType, typename EdgeType, typename FaceType, typename HalfEdgeType>
+	inline VertexType* CBaseMesh<VertexType, EdgeType, FaceType, HalfEdgeType>::halfedgeOppositeVertex(HEPtr pHE)
+	{
+		return (VertexType*)pHE->he_next()->vertex();
+	}
 
 	//access he->v
 	/*!
